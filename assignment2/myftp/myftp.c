@@ -24,11 +24,16 @@
 #include <netinet/in.h> /* struct sockaddr_in, htons, htonl */
 #include <netdb.h>      /* struct hostent, gethostbyname() */
 #include <string.h>
+#include <unistd.h>
+#include <dirent.h>
 #include "../stream.h" /* MAX_BLOCK_SIZE, readn(), writen() */
 #include "token.h"
 
 #define SERV_TCP_PORT 8080
-
+//change client current directory
+void cli_lcd(char *);
+//list file in client current directory
+void cli_ldir();
 int main(int argc, char *argv[])
 {
     int sd, n, nr, nw, tknum, i = 0;
@@ -77,6 +82,7 @@ int main(int argc, char *argv[])
     while (++i)
     {
         printf(">");
+        //get user input
         fgets(buf, sizeof(buf), stdin);
         nr = strlen(buf);
         if (buf[nr - 1] == '\n')
@@ -84,30 +90,96 @@ int main(int argc, char *argv[])
             buf[nr - 1] = '\0';
             --nr;
         }
-        bzero(buf2, sizeof(buf2));
-        bcopy(buf, buf2, sizeof(buf));
-
-        tknum = tokenise(buf2, tokens);
-
+        //quit
         if (strcmp(buf, "quit") == 0)
         {
-            printf("Bye from client\n");
+            printf("\tBye from client\n");
             exit(0);
         }
-        if (nr > 0)
+        else
         {
-            if ((nw = writen(sd, buf, nr)) < nr)
+            //set buffer to 0 and copy
+            memset(buf2, 0, MAX_BLOCK_SIZE);
+            memcpy(buf2, buf, MAX_BLOCK_SIZE);
+            //tokenise user input
+            tknum = tokenise(buf2, tokens);
+            if (tknum > 2)
             {
-                printf("client: send error\n");
-                exit(1);
+                printf("\tInvalid command,please try again\n");
             }
-            if ((nr = readn(sd, buf, sizeof(buf))) <= 0)
+            /*
+            This will display client's current working directory
+            */
+            if (strcmp(tokens[0], "lpwd") == 0)
             {
-                printf("client: receive error\n");
-                exit(1);
+                memset(buf, 0, MAX_BLOCK_SIZE);
+                getcwd(buf, MAX_BLOCK_SIZE);
+                printf("\t%s\n", buf);
             }
-            buf[nr] = '\0';
-            printf("Sever Output[%d]: %s\n", i, buf);
+            else if (strcmp(tokens[0], "ldir") == 0)
+            {
+                cli_ldir();
+            }
+            /*
+                This will change the client directory
+                check the token for lcd, if = 0
+                Continue to check if directory exist and then change to 
+                that directory
+                */
+            if (strcmp(tokens[0], "lcd") == 0)
+            {
+                if(tknum != 2){
+                    printf("\tInvalid command usage, please use: lcd [path]\n");
+                }
+                else
+                {
+                    cli_lcd(tokens[1]);
+                }
+            }
         }
     }
+}
+
+void cli_lcd(char *path)
+{
+    if (chdir(path) != 0)
+    {
+        printf("\tInvalid directory specified\n");
+    }
+    return;
+}
+
+void cli_ldir()
+{
+    //open and create dirent pointer and struct
+    DIR *dp;
+    struct dirent *direntp;
+    //variables for file name storage
+    int filecount = 0;
+    char *filenamearray[MAX_NUM_TOKENS];
+    if ((dp = opendir(".")) == NULL)
+    {
+        printf("\tFailed to open directory\n");
+        return;
+    }
+    //get filenames
+    while ((direntp = readdir(dp)) != NULL)
+    {
+        if (direntp->d_name[0] == '.')
+        {
+            continue;
+        }
+        filenamearray[filecount] = direntp->d_name;
+        filecount++;
+        if (filecount > MAX_NUM_TOKENS)
+        {
+            printf("\tToo many files to be displayed!\n");
+            break;
+        }
+    }
+    for (int i = 0; i < filecount; i++)
+    {
+        printf("\t%s\n", filenamearray[i]);
+    }
+    return;
 }
