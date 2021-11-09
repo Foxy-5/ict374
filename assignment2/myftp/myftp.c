@@ -28,12 +28,16 @@
 #include <dirent.h>
 #include "../stream.h" /* MAX_BLOCK_SIZE, readn(), writen() */
 #include "token.h"
+#include "../netprotocol.h"
 
 #define SERV_TCP_PORT 8080
 //change client current directory
 void cli_lcd(char *);
 //list file in client current directory
 void cli_ldir();
+//get server change directory
+void cli_pwd(int);
+
 int main(int argc, char *argv[])
 {
     int sd, n, nr, nw, tknum, i = 0;
@@ -126,15 +130,20 @@ int main(int argc, char *argv[])
                 Continue to check if directory exist and then change to 
                 that directory
                 */
-            if (strcmp(tokens[0], "lcd") == 0)
+            else if (strcmp(tokens[0], "lcd") == 0)
             {
-                if(tknum != 2){
+                if (tknum != 2)
+                {
                     printf("\tInvalid command usage, please use: lcd [path]\n");
                 }
                 else
                 {
                     cli_lcd(tokens[1]);
                 }
+            }
+            else if (strcmp(tokens[0], "pwd") == 0)
+            {
+                cli_pwd(sd);
             }
         }
     }
@@ -180,6 +189,45 @@ void cli_ldir()
     for (int i = 0; i < filecount; i++)
     {
         printf("\t%s\n", filenamearray[i]);
+    }
+    return;
+}
+
+void cli_pwd(int sd)
+{
+    //create variable for use
+    char buf[MAX_BLOCK_SIZE];
+    char serverpath[MAX_BLOCK_SIZE];
+    int nw, nr, len;
+    char opcode;
+    memset(buf, 0, MAX_BLOCK_SIZE);
+    memset(serverpath, 0, MAX_BLOCK_SIZE);
+    //set op code
+    buf[0] = PWD_CODE;
+    //write op code to server
+    nw = writen(sd, buf, 1);
+    //read the op code from the server
+    nr = readn(sd, &buf[0], sizeof(buf));
+    //printf("\t%s\n",buf);
+    if (!(buf[0] == PWD_CODE))
+    {
+        printf("/tFailed to read PWD op code\n");
+        return;
+    }
+    nr = readn(sd, &buf[1], sizeof(buf));
+    if (buf[1] == PWD_READY)
+    {
+        // read the length of server file path
+        nr = readn(sd, &buf[2], sizeof(buf));
+        //copy 4 bytes of the length
+        memcpy(&len, &buf[2], 4);
+        len = (int)ntohs(len);
+        nr = readn(sd, serverpath, sizeof(buf));
+        printf("\t%s\n", serverpath);
+    }
+    else
+    {
+        printf("\tFailed: Status code was '1'\n");
     }
     return;
 }

@@ -28,6 +28,7 @@
 #include <netinet/in.h> /* struct sockaddr_in, htons(), htonl(), */
                         /* and INADDR_ANY */
 #include "../stream.h"
+#include "../netprotocol.h"
 #define SERV_TCP_PORT 8080 //default port
 
 // Source: Chapter 8 Example 6 ser6.c
@@ -39,7 +40,8 @@ void daemon_init(void);
 // Source: chapter 8 Example 6 ser6.c
 // Serve a client connecting to the server
 void serve_a_client(int);
-
+//server pwd function handler
+void ser_pwd(int, char*); 
 int main(int argc, char *argv[])
 {
     int sd, nsd, n;
@@ -130,6 +132,34 @@ int main(int argc, char *argv[])
     }
 }
 
+void ser_pwd(int sd,char * buf)
+{
+    int len,nr,nw;
+    char serverpath[MAX_BLOCK_SIZE];
+    char status;
+    buf[0] = PWD_CODE;
+    getcwd(serverpath,MAX_BLOCK_SIZE);
+    nr = strlen(serverpath);
+    len = htons(nr);
+
+    if(len > 0)
+    {
+        status = PWD_READY;
+        bcopy(&len,&buf[2],4);
+
+        nw = writen(sd, &buf[0], 1);
+        nw = writen(sd, &status, 1);
+        nw = writen(sd, &buf[2], 4);
+        nw = writen(sd,serverpath,nr);
+    }
+    else
+    {
+        status = PWD_ERROR;
+        nw = writen(sd, &status,1);
+        return;
+    }
+
+}
 void claim_children()
 {
     pid_t pid = 1;
@@ -189,7 +219,10 @@ void serve_a_client(int sd)
             return; //if failed to read
         }
         //process data
-        buf[nr] = '\0';
+        if(buf[0] == PWD_CODE)
+        {
+            ser_pwd(sd,buf);
+        }
         //send back to client
         nw = writen(sd, buf, nr);
     }
