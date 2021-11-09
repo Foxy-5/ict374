@@ -24,3 +24,7 @@
 #define PWD_CODE 'W'
 #define PWD_READY '0'
 #define PWD_ERROR '1'
+
+#define DIR_CODE 'D'
+#define DIR_READY '0'
+#define DIR_ERROR '1'

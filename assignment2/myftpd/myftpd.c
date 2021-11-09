@@ -29,6 +29,8 @@
                         /* and INADDR_ANY */
 #include "../stream.h"
 #include "../netprotocol.h"
+#include <dirent.h>
+#include "../myftp/token.h"
 #define SERV_TCP_PORT 8080 //default port
 
 // Source: Chapter 8 Example 6 ser6.c
@@ -160,6 +162,68 @@ void ser_pwd(int sd,char * buf)
     }
 
 }
+
+void ser_dir(int sd, char * buf)
+{
+    int len,nw,nr;
+    char status;
+    buf[0] = DIR_CODE;
+
+    DIR *dp;
+    struct dirent *direntp;
+    int filecount = 0;
+    char files[MAX_NUM_TOKENS];
+    char tmp[MAX_NUM_TOKENS];
+
+    if ((dp = opendir(".")) == NULL)
+    {
+        printf("\tFailed to open directory\n");
+        status = DIR_ERROR;
+        nw = writen(sd, &status,1);
+        return;
+    }
+
+    //get filenames
+    while ((direntp = readdir(dp)) != NULL)
+    {
+        strcpy(tmp, direntp->d_name);
+
+        if(tmp[0] != '.'){
+            if(filecount != 0)
+            {
+                strcat(files, "\n\t");
+            }
+            else
+            {
+                strcat(files, "\t");
+            }
+            strcat(files, direntp->d_name);
+        }
+        filecount++;
+        if (filecount > MAX_NUM_TOKENS)
+        {
+            printf("\tToo many files to be displayed!\n");
+            break;
+        }
+
+    }
+
+    nr = strlen(files);
+    len = htons(nr);
+    bcopy(&len,&buf[2],4);
+
+    if(nr == 0)
+        status = DIR_ERROR;
+    else
+        status = DIR_READY;
+
+    nw = writen(sd, &buf[0], 1);
+    nw = writen(sd, &status, 1);
+    nw = writen(sd, &buf[2], 4);
+    nw = writen(sd, files, nr);
+    return;
+}
+
 void claim_children()
 {
     pid_t pid = 1;
@@ -222,6 +286,10 @@ void serve_a_client(int sd)
         if(buf[0] == PWD_CODE)
         {
             ser_pwd(sd,buf);
+        }
+        else if(buf[0] == DIR_CODE)
+        {
+            ser_dir(sd,buf);
         }
         //send back to client
         nw = writen(sd, buf, nr);

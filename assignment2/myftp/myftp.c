@@ -37,6 +37,8 @@ void cli_lcd(char *);
 void cli_ldir();
 //get server change directory
 void cli_pwd(int);
+//list file in remote / server current directory
+void cli_dir();
 
 int main(int argc, char *argv[])
 {
@@ -145,6 +147,10 @@ int main(int argc, char *argv[])
             {
                 cli_pwd(sd);
             }
+            else if (strcmp(tokens[0], "dir") == 0)
+            {             
+                cli_dir(sd);
+            }
             else
             {
                 printf("\tInvalid command please try again.\n");
@@ -228,6 +234,45 @@ void cli_pwd(int sd)
         len = (int)ntohs(len);
         nr = readn(sd, serverpath, sizeof(buf));
         printf("\t%s\n", serverpath);
+    }
+    else
+    {
+        printf("\tFailed: Status code was '1'\n");
+    }
+    return;
+}
+
+void cli_dir(int sd)
+{
+    //create variable for use
+    char buf[MAX_BLOCK_SIZE];
+    char ser_files[MAX_BLOCK_SIZE];
+    int nw, nr, len;
+    char opcode;
+    memset(buf, 0, MAX_BLOCK_SIZE);
+    memset(ser_files, 0, MAX_BLOCK_SIZE);
+    //set op code
+    buf[0] = DIR_CODE;
+    //write op code to server
+    nw = writen(sd, buf, 1);
+    //read the op code from the server
+    nr = readn(sd, &buf[0], sizeof(buf));
+    //printf("\t%s\n",buf);
+    if (!(buf[0] == DIR_CODE))
+    {
+        printf("/tFailed to read DIR op code\n");
+        return;
+    }
+    nr = readn(sd, &buf[1], sizeof(buf));
+    if (buf[1] == DIR_READY)
+    {
+        // read the length of server file path
+        nr = readn(sd, &buf[2], sizeof(buf));
+        //copy 4 bytes of the length
+        memcpy(&len, &buf[2], 4);
+        len = (int)ntohs(len);
+        nr = readn(sd, ser_files, sizeof(buf));
+        printf("\t%s\n", ser_files);
     }
     else
     {
