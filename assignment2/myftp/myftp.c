@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         perror("client connect");
         exit(1);
     }
-
+    printf("Client has successfully connected to the server.\n");
     while (++i)
     {
         printf(">");
@@ -144,6 +144,10 @@ int main(int argc, char *argv[])
             else if (strcmp(tokens[0], "pwd") == 0)
             {
                 cli_pwd(sd);
+            }
+            else
+            {
+                printf("\tInvalid command please try again.\n");
             }
         }
     }
