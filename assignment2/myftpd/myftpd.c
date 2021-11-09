@@ -189,15 +189,15 @@ void ser_dir(int sd, char * buf)
         strcpy(tmp, direntp->d_name);
 
         if(tmp[0] != '.'){
+            strcat(files, direntp->d_name);
             if(filecount != 0)
             {
                 strcat(files, "\n\t");
             }
-            else
-            {
-                strcat(files, "\t");
-            }
-            strcat(files, direntp->d_name);
+            // else
+            // {
+            //     strcat(files, "\t");
+            // }
         }
         filecount++;
         if (filecount > MAX_NUM_TOKENS)

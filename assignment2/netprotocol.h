@@ -9,14 +9,14 @@
  */
 
 #define PUT_1 'P'
-#define PUT_2 'D'
+#define PUT_2 'R'
 #define PUT_READY '0'
 #define PUT_CLASH_ERROR '1'
 #define PUT_CREATE_ERROR '2'
 #define PUT_OTHER_ERROR '3'
 
 #define GET_1 'G'
-#define GET_2 'D'
+#define GET_2 'R'
 #define GET_READY '0'
 #define GET_NOT_FOUND '1'
 #define GET_OTHER_ERROR '2'

@@ -260,7 +260,7 @@ void cli_dir(int sd)
     //printf("\t%s\n",buf);
     if (!(buf[0] == DIR_CODE))
     {
-        printf("/tFailed to read DIR op code\n");
+        printf("\tFailed to read DIR op code\n");
         return;
     }
     nr = readn(sd, &buf[1], sizeof(buf));
