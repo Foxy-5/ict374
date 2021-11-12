@@ -1,6 +1,6 @@
 #Makefile
 
-myftp: myftpd.c stream.o ../netprotocol.h
+myftpd: myftpd.c stream.o ../netprotocol.h
 	gcc myftpd.c stream.o ../netprotocol.h -o myftpd
 	
 stream.o: ../stream.c ../stream.h

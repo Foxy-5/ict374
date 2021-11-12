@@ -14,6 +14,8 @@
 #define PUT_CLASH_ERROR '1'
 #define PUT_CREATE_ERROR '2'
 #define PUT_OTHER_ERROR '3'
+#define PUT_DONE '0'
+#define PUT_FAIL '1'
 
 #define GET_1 'G'
 #define GET_2 'R'
