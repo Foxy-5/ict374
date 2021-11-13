@@ -1,11 +1,11 @@
 /**
  * file:        myftpd.c
- * Author:      Seow Wei Cheng (33753618)
- * Date:        28/10/2021 (version 1)
+ * Author:      Seow Wei Cheng (33753618) and Jin Min Seok ()
+ * Date:        13/11/2021 (version 2)
  * Purpose:     This is the main driver code for the ftp server
  *              usage: myftpd [initial_current_directory]
  *              if no initial directory is provided current directory is assumed
- *              default port is 8080
+ *              default port is 41314
  *              The program can perform the following commands
  *              - [pwd] Display the current directory of the server that is currently serving the client
  *              - [dir] Display the file names under the current directory that is serving the client
@@ -32,7 +32,7 @@
 #include "../netprotocol.h"
 #include <dirent.h>
 #include "../myftp/token.h"
-#define SERV_TCP_PORT 8080 //default port
+#define SERV_TCP_PORT 41314 //default port
 
 // Source: Chapter 8 Example 6 ser6.c
 // claim as many zombies as we can
@@ -301,12 +301,12 @@ void serve_a_client(int sd)
 
 void ser_put(int sd)
 {
-    //FILE *file;
+    //variables used
     char opcode, ackcode;
     int file_len, fsize, nr, nw, fd, total;
-    char filename[MAX_BLOCK_SIZE];
-    char buf[MAX_BLOCK_SIZE];
-    //read file name length
+    char filename[MAX_BLOCK_SIZE]; //buffer to store filename
+    char buf[MAX_BLOCK_SIZE]; //buffer to store client and server message
+    //read file name length and convert to host byte order
     readn(sd, &buf[0], MAX_BLOCK_SIZE);
     memcpy(&file_len, &buf[0], 2);
     file_len = ntohs(file_len);
@@ -314,6 +314,7 @@ void ser_put(int sd)
     //read file name
     readn(sd, &buf[2], MAX_BLOCK_SIZE);
     memcpy(&filename, &buf[2], file_len);
+    //set last index of filename to be NULL
     filename[file_len] = '\0';
     printf("file name is: %s\n", filename);
     //check if file exist on server
@@ -331,11 +332,12 @@ void ser_put(int sd)
     buf[1] = ackcode;
     writen(sd, &buf[0], 1);
     writen(sd, &buf[1], 1);
-
+    //if ackcode is '0'
     if (ackcode == PUT_READY)
     {
         //read opcode from client
         memset(buf, 0, MAX_BLOCK_SIZE);
+        //check if can read opcode from client
         if (readn(sd, &buf[0], MAX_BLOCK_SIZE) < 0)
         {
             printf("failed to read opcode 2 from client\n");
@@ -344,61 +346,93 @@ void ser_put(int sd)
         memcpy(&opcode, &buf[0], 1);
         printf("opcode is %c\n", opcode);
         //read file size
+        //check if can read file size from client
         if (readn(sd, &buf[1], MAX_BLOCK_SIZE) < 0)
         {
             printf("failed to read file size from client\n");
             return;
         }
         memcpy(&fsize, &buf[1], 4);
+        //convert file size to host byte order
         fsize = ntohl(fsize);
         printf("file size is %d\n", fsize);
         //create file
         if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) != -1)
         {
+            //set ackcode
             ackcode = PUT_DONE;
+            //set max block of data recieved
             char block[MAX_BLOCK_SIZE];
+            //set block buffer to 0
             memset(block, '\0', MAX_BLOCK_SIZE);
+            //set file seek pointer to start of file
             lseek(fd, 0, SEEK_SET);
             //read first block
             nr = readn(sd, block, MAX_BLOCK_SIZE);
+            //if failed to read set ackcode to '1'
             if(nr < 0)
             {
-                printf("failed to read file");
+                printf("failed to read file\n");
                 ackcode = PUT_FAIL;
             }
+            //if total file size is smaller than max block size
             if (fsize < MAX_BLOCK_SIZE)
             {
+                //write block of data to file using leftover file size
                 nw = write(fd, block, fsize);
             }
             else
             {
+                //write block of data to file using max block size
                 nw = write(fd, block, MAX_BLOCK_SIZE);
+                //add write count to total count
                 total += nw;
-
+                //if total transfer is less than file size
                 while (total < fsize)
                 {
+                    //reset block buffer
                     memset(block, '\0', MAX_BLOCK_SIZE);
+                    //set file seek pointer to total transfer
                     lseek(fd, total, SEEK_SET);
+                    //read next block of data
                     nr = readn(sd, block, MAX_BLOCK_SIZE);
+                    //if leftover data is less than max block size
                     if ((fsize - total) < MAX_BLOCK_SIZE)
                     {
+                        //write to fd using the leftover file size
                         nw = write(fd, block, (fsize - total));
                     }
                     else
                     {
+                        //write to fd using the max block size
                         nw = write(fd, block, MAX_BLOCK_SIZE);
                     }
+                    //add to total file count
                     total += nw;
                 }
             }
+        }
+        else
+        {
+            ackcode = PUT_FAIL;
         }
         //write to client status of file transfer
         memset(buf,0,MAX_BLOCK_SIZE);
         opcode = PUT_2;
         memcpy(&buf[0],&opcode,1);
-        writen(sd,&buf[0],1);
+        //write opcode to client
+        if(writen(sd,&buf[0],1) < 0)
+        {
+            printf("Unable to send opcode to client\n");
+            return;
+        }
         memcpy(&buf[1],&ackcode,1);
-        writen(sd,&buf[1],1);
+        //write ack code to client
+        if(writen(sd,&buf[1],1) < 0)
+        {
+            printf("Unable to send ackcode to client\n");
+            return;
+        }
         close(fd);
         printf("file recieved\n");
         return;
