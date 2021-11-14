@@ -43,7 +43,8 @@ void cli_pwd(int);
 void cli_dir(int);
 //Upload file from client to server
 void cli_put(int, char *);
-
+//download file from server to client
+void cli_get(int, char *);
 int main(int argc, char *argv[])
 {
     int sd, n, nr, nw, tknum, i = 0;
@@ -164,6 +165,17 @@ int main(int argc, char *argv[])
                 else
                 {
                     cli_put(sd, tokens[1]);
+                }
+            }
+            else if (strcmp(tokens[0], "get") == 0)
+            {
+                if (tknum != 2)
+                {
+                    printf("\tInvalid command usage, please use: get [filename]\n");
+                }
+                else
+                {
+                    cli_get(sd, tokens[1]);
                 }
             }
             else
@@ -296,6 +308,152 @@ void cli_dir(int sd)
     return;
 }
 
+void cli_get(int sd, char *filename)
+{
+    char opcode, ackcode;
+    int fsize, nr, nw, file_len, total, fd;
+    char buf[MAX_BLOCK_SIZE];
+    memset(buf, 0, MAX_BLOCK_SIZE);
+
+    char file_name[MAX_BLOCK_SIZE]; //use for storing filename
+    strcpy(file_name, filename);    //string copy filename
+    buf[0] = GET_1;
+    if (writen(sd, &buf[0], 1) < 0)
+    {
+        printf("\tFailed to write op code to server.\n");
+        return;
+    }
+    memset(buf, 0, MAX_BLOCK_SIZE); //set buffer to 0
+    //get file name length
+    file_len = strlen(file_name);
+    int templen = htons(file_len);
+    //set last index of file_name to null
+    file_name[file_len] = '\0';
+    //write file name length to server
+    memcpy(&buf[0], &templen, 2);
+    if (writen(sd, &buf[0], 2) < 0)
+    {
+        printf("\tFailed to write file length to server.\n");
+        return;
+    }
+    //write file name to server using file length
+    memcpy(&buf[2], &file_name, file_len);
+    if (writen(sd, &buf[2], file_len) < 0)
+    {
+        printf("\tFailed to write file name to server.\n");
+        return;
+    }
+    //read server response
+    memset(buf, 0, MAX_BLOCK_SIZE);
+    if (readn(sd, &buf[0], MAX_BLOCK_SIZE) < 0)
+    {
+        printf("\tFailed to read op code from server\n");
+        return;
+    }
+    memcpy(&opcode, &buf[0], 1);
+    printf("\tOpcode from server is: %c\n", opcode);
+    if (readn(sd, &buf[1], MAX_BLOCK_SIZE) < 0)
+    {
+        printf("\tFailed to read ack code from server\n");
+        return;
+    }
+    memcpy(&ackcode, &buf[1], 1);
+    printf("\tAckcode from server is: %c\n", ackcode);
+    if (opcode == GET_1)
+    {
+        if (ackcode == GET_READY)
+        {
+            printf("\tfile is found on server.\n");
+            memset(buf, 0, MAX_BLOCK_SIZE);
+            if (readn(sd, &buf[0], MAX_BLOCK_SIZE) < 0)
+            {
+                printf("\tFailed to read opcode 2 from server.\n");
+                return;
+            }
+            memcpy(&opcode, &buf[0], 1);
+            if (opcode == GET_2)
+            {
+                //check if can read file size from client
+                if (readn(sd, &buf[1], MAX_BLOCK_SIZE) < 0)
+                {
+                    printf("\tfailed to read file size from client\n");
+                    return;
+                }
+                memcpy(&fsize, &buf[1], 4);
+                //convert file size to host byte order
+                fsize = ntohl(fsize);
+                printf("\tfile size is %d\n", fsize);
+                //create file
+                if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) != -1)
+                {
+                    //set ackcode
+                    ackcode = PUT_DONE;
+                    //set max block of data recieved
+                    char block[MAX_BLOCK_SIZE];
+                    //set block buffer to 0
+                    memset(block, '\0', MAX_BLOCK_SIZE);
+                    //set file seek pointer to start of file
+                    lseek(fd, 0, SEEK_SET);
+                    //read first block
+                    nr = readn(sd, block, MAX_BLOCK_SIZE);
+                    //if failed to read set ackcode to '1'
+                    if (nr < 0)
+                    {
+                        printf("failed to read file\n");
+                        ackcode = PUT_FAIL;
+                    }
+                    //if total file size is smaller than max block size
+                    if (fsize < MAX_BLOCK_SIZE)
+                    {
+                        //write block of data to file using leftover file size
+                        nw = write(fd, block, fsize);
+                    }
+                    else
+                    {
+                        //write block of data to file using max block size
+                        nw = write(fd, block, MAX_BLOCK_SIZE);
+                        //add write count to total count
+                        total += nw;
+                        //if total transfer is less than file size
+                        while (total < fsize)
+                        {
+                            //reset block buffer
+                            memset(block, '\0', MAX_BLOCK_SIZE);
+                            //set file seek pointer to total transfer
+                            lseek(fd, total, SEEK_SET);
+                            //read next block of data
+                            nr = readn(sd, block, MAX_BLOCK_SIZE);
+                            //if leftover data is less than max block size
+                            if ((fsize - total) < MAX_BLOCK_SIZE)
+                            {
+                                //write to fd using the leftover file size
+                                nw = write(fd, block, (fsize - total));
+                            }
+                            else
+                            {
+                                //write to fd using the max block size
+                                nw = write(fd, block, MAX_BLOCK_SIZE);
+                            }
+                            //add to total file count
+                            total += nw;
+                        }
+                    }
+                }
+                printf("\tFile is recieved from server.\n");
+            }
+            else if (ackcode == GET_NOT_FOUND)
+            {
+                printf("\tError:file is not found on server.\n");
+                return;
+            }
+        }
+        else
+        {
+            printf("\tServer send wrong opcode\n");
+            return;
+        }
+    }
+}
 void cli_put(int sd, char *filename)
 {
 
@@ -306,9 +464,9 @@ void cli_put(int sd, char *filename)
 
     memset(buf, 0, MAX_BLOCK_SIZE); //set buffer to zero
     char file_name[MAX_BLOCK_SIZE]; //use for storing filename
-    strcpy(file_name, filename); //string copy filename
+    strcpy(file_name, filename);    //string copy filename
 
-    FILE *file; //create file pointer
+    FILE *file;                   //create file pointer
     file = fopen(file_name, "r"); //open client selected file
     //check if file exist on client
     if (file != NULL)
@@ -420,34 +578,34 @@ void cli_put(int sd, char *filename)
                 //add write count to total size
                 total += nr;
             }
-            
+
             //read server response
             memset(buf, 0, MAX_BLOCK_SIZE);
             //check if can read opcode from server
-            if(readn(sd,&buf[0],MAX_BLOCK_SIZE) < 0)
+            if (readn(sd, &buf[0], MAX_BLOCK_SIZE) < 0)
             {
                 printf("\tError: Not able to read opcode from server 3.\n");
                 return;
             }
-            memcpy(&opcode,&buf[0],1);
+            memcpy(&opcode, &buf[0], 1);
             //check if can read ack code from server
-            if(readn(sd,&buf[1],MAX_BLOCK_SIZE))
+            if (readn(sd, &buf[1], MAX_BLOCK_SIZE))
             {
                 printf("\tError: Not able to read ack code from server 3.\n");
             }
-            memcpy(&ackcode,&buf[1],1);
+            memcpy(&ackcode, &buf[1], 1);
             //check if opcode is correct
-            if(opcode == PUT_2)
+            if (opcode == PUT_2)
             {
                 printf("\tServer opcode recieved.\n");
                 printf("\topcode is: %c\n", opcode);
                 //check if ackcode is 0, which is file transfer done
-                if(ackcode == PUT_DONE)
+                if (ackcode == PUT_DONE)
                 {
                     printf("\tFile is transfer succesfully.\n");
                     printf("\tackcode is: %c\n", ackcode);
                 }
-                else if(ackcode == PUT_FAIL)
+                else if (ackcode == PUT_FAIL)
                 {
                     printf("\tFile failed to transfer succesfully.\n");
                     printf("\tackcode is: %c\n", ackcode);
@@ -474,133 +632,3 @@ void cli_put(int sd, char *filename)
     }
     return;
 }
-// void cli_put(int sd, char *filename)
-// {
-//     //variables
-//     char opcode, ackcode;
-//     int fd, fsize, nr, nw, convertedsize, convertedfile_len, block_size;
-//     struct stat filestat;
-//     char buf[MAX_BLOCK_SIZE];
-//     char buf1[MAX_BLOCK_SIZE];
-
-//     int file_len = strlen(filename); //file name length
-//     char file_name[file_len + 1];    //file name size
-//     strcpy(file_name, filename);
-//     filename[file_len] = '\0';
-//     //check if file exist
-//     if ((fd = open(file_name, O_RDONLY) == -1))
-//     {
-//         printf("\tFailed to open selected file.\n");
-//         return;
-//     }
-
-//     //check file stats
-//     if (fstat(fd, &filestat) < 0)
-//     {
-//         printf("\tFailed to get file stats.\n");
-//         return;
-//     }
-//     fsize = (int)filestat.st_size;
-//     convertedsize = (int)htonl(fsize);
-//     //send opcode to server
-//     opcode = PUT_1;
-//     buf1[0] = opcode;
-//     if (writen(sd, buf1, 1) < 0)
-//     {
-//         printf("\tFailed to send opcode to server.\n");
-//         return;
-//     }
-
-//     //send file name length to server
-//     convertedfile_len = htons(file_len);
-//     //memcpy(&buf1[1],&convertedfile_len,4);
-//     bcopy(&convertedfile_len,&buf1[1],2);
-//     if (writen(sd, &buf1[1], 2) < 0)
-//     {
-//         printf("\tfailed to send file name length to server.\n");
-//         return;
-//     }
-
-//     //send file name
-//     if (writen(sd, file_name, file_len) < 0)
-//     {
-//         printf("\tFailed to send file name to server.\n");
-//         return;
-//     }
-
-//     //read opcode from server
-//     if (readn(sd, &opcode, MAX_BLOCK_SIZE) < 0)
-//     {
-//         printf("\tFailed to read opcode from server.\n");
-//         return;
-//     }
-//     //check opcode from server
-//     if (opcode != PUT_1)
-//     {
-//         printf("\tFailed to get correct opcode from server.\n");
-//         return;
-//     }
-//     //read ackcode from server
-//     if (readn(sd, &ackcode, MAX_BLOCK_SIZE) < 0)
-//     {
-//         printf("\tFailed to read ack code from server\n");
-//         return;
-//     }
-//     //check ack code from server
-//     if (ackcode == PUT_READY)
-//     {
-//         opcode = PUT_2;
-//         if (writen(sd, &opcode, 1) < 0)
-//         {
-//             printf("\tFailed to write opcode 2 to server\n");
-//             return;
-//         }
-//         memset(buf1,'\0',MAX_BLOCK_SIZE);
-//         memcpy(buf1,&convertedsize,4);
-//         if(writen(sd,buf1,4) < 0)
-//         {
-//             printf("\tFailed to write file size to server.\n");
-//             return;
-//         }
-//         memset(buf1,'\0',MAX_BLOCK_SIZE);
-//         lseek(fd,0,SEEK_SET);
-//         nr = read(fd, buf1, MAX_BLOCK_SIZE);
-//         nw = writen(sd, buf1, MAX_BLOCK_SIZE);
-
-//         block_size += nw;
-
-//         while(block_size < fsize)
-//         {
-//             memset(buf1,'\0',MAX_BLOCK_SIZE);
-//             lseek(fd,block_size,SEEK_SET);
-
-//             if((fsize - block_size) > MAX_BLOCK_SIZE)
-//             {
-//                 nr = read(fd, buf1, MAX_BLOCK_SIZE);
-//             }
-//             else
-//             {
-//                 nr = read(fd,buf1,(fsize - block_size));
-//             }
-//             writen(sd, buf1, MAX_BLOCK_SIZE);
-//             block_size += nr;
-//         }
-//     }
-//     else if (ackcode == PUT_CLASH_ERROR)
-//     {
-//         printf("\tServer return error code 1\n");
-//         return;
-//     }
-//     else if (ackcode == PUT_CREATE_ERROR)
-//     {
-//         printf("\tServer return error code 2\n");
-//         return;
-//     }
-//     else if (ackcode == PUT_OTHER_ERROR)
-//     {
-//         printf("\tServer return error code 3\n");
-//         return;
-//     }
-//     close(fd);
-//     return;
-// }

@@ -44,9 +44,13 @@ void daemon_init(void);
 // Serve a client connecting to the server
 void serve_a_client(int);
 //server pwd function handler
-void ser_pwd(int, char *);
+void ser_pwd(int);
+//server dir function handler
+void ser_dir(int);
 //server put function handler
 void ser_put(int);
+//server get function handler
+void ser_get(int);
 
 int main(int argc, char *argv[])
 {
@@ -137,11 +141,87 @@ int main(int argc, char *argv[])
         exit(0);
     }
 }
+void claim_children()
+{
+    pid_t pid = 1;
 
-void ser_pwd(int sd, char *buf)
+    while (pid > 0)
+    { /* claim as many zombies as we can */
+        pid = waitpid(0, (int *)0, WNOHANG);
+    }
+}
+
+void daemon_init(void)
+{
+    pid_t pid;
+    struct sigaction act;
+
+    if ((pid = fork()) < 0)
+    {
+        perror("fork");
+        exit(1);
+    }
+    else if (pid > 0)
+    {
+        printf("Hay, you'd better remember my PID: %d\n", pid);
+        exit(0); /* parent goes bye-bye */
+    }
+
+    /* child continues */
+    setsid(); /* become session leader */
+    //chdir("/"); /* change working directory */
+    umask(0); /* clear file mode creation mask */
+
+    /* catch SIGCHLD to remove zombies from system */
+    act.sa_handler = claim_children; /* use reliable signal */
+    sigemptyset(&act.sa_mask);       /* not to block other signals */
+    act.sa_flags = SA_NOCLDSTOP;     /* not catch stopped children */
+    sigaction(SIGCHLD, (struct sigaction *)&act, (struct sigaction *)0);
+}
+
+void serve_a_client(int sd)
+{
+    int nw, nr;
+    char buf[MAX_BLOCK_SIZE];
+
+    while (1)
+    {
+        bzero(buf, sizeof(buf));
+
+        /*
+        Read from client
+        */
+        if ((nr = readn(sd, buf, sizeof(buf))) <= 0)
+        {
+            return; //if failed to read
+        }
+        //process data
+        if (buf[0] == PWD_CODE)
+        {
+            ser_pwd(sd);
+        }
+        else if (buf[0] == DIR_CODE)
+        {
+            ser_dir(sd);
+        }
+        else if (buf[0] == PUT_1)
+        {
+            ser_put(sd);
+        }
+        else if (buf[0] == GET_1)
+        {
+            ser_get(sd);
+        }
+        //send back to client
+        // nw = writen(sd, buf, nr);
+    }
+}
+
+void ser_pwd(int sd)
 {
     int len, nr, nw;
     char serverpath[MAX_BLOCK_SIZE];
+    char buf[MAX_BLOCK_SIZE];
     char status;
     buf[0] = PWD_CODE;
     getcwd(serverpath, MAX_BLOCK_SIZE);
@@ -166,8 +246,9 @@ void ser_pwd(int sd, char *buf)
     }
 }
 
-void ser_dir(int sd, char *buf)
+void ser_dir(int sd)
 {
+    char buf[MAX_BLOCK_SIZE];
     int len, nw, nr;
     char status;
     buf[0] = DIR_CODE;
@@ -227,85 +308,13 @@ void ser_dir(int sd, char *buf)
     return;
 }
 
-void claim_children()
-{
-    pid_t pid = 1;
-
-    while (pid > 0)
-    { /* claim as many zombies as we can */
-        pid = waitpid(0, (int *)0, WNOHANG);
-    }
-}
-
-void daemon_init(void)
-{
-    pid_t pid;
-    struct sigaction act;
-
-    if ((pid = fork()) < 0)
-    {
-        perror("fork");
-        exit(1);
-    }
-    else if (pid > 0)
-    {
-        printf("Hay, you'd better remember my PID: %d\n", pid);
-        exit(0); /* parent goes bye-bye */
-    }
-
-    /* child continues */
-    setsid(); /* become session leader */
-    //chdir("/"); /* change working directory */
-    umask(0); /* clear file mode creation mask */
-
-    /* catch SIGCHLD to remove zombies from system */
-    act.sa_handler = claim_children; /* use reliable signal */
-    sigemptyset(&act.sa_mask);       /* not to block other signals */
-    act.sa_flags = SA_NOCLDSTOP;     /* not catch stopped children */
-    sigaction(SIGCHLD, (struct sigaction *)&act, (struct sigaction *)0);
-}
-
-void serve_a_client(int sd)
-{
-    int nw, nr;
-    char buf[MAX_BLOCK_SIZE];
-
-    while (1)
-    {
-        bzero(buf, sizeof(buf));
-
-        /*
-        Read from client
-        */
-        if ((nr = readn(sd, buf, sizeof(buf))) <= 0)
-        {
-            return; //if failed to read
-        }
-        //process data
-        if (buf[0] == PWD_CODE)
-        {
-            ser_pwd(sd, buf);
-        }
-        else if (buf[0] == DIR_CODE)
-        {
-            ser_dir(sd, buf);
-        }
-        else if (buf[0] == PUT_1)
-        {
-            ser_put(sd);
-        }
-        //send back to client
-        // nw = writen(sd, buf, nr);
-    }
-}
-
 void ser_put(int sd)
 {
     //variables used
     char opcode, ackcode;
     int file_len, fsize, nr, nw, fd, total;
     char filename[MAX_BLOCK_SIZE]; //buffer to store filename
-    char buf[MAX_BLOCK_SIZE]; //buffer to store client and server message
+    char buf[MAX_BLOCK_SIZE];      //buffer to store client and server message
     //read file name length and convert to host byte order
     readn(sd, &buf[0], MAX_BLOCK_SIZE);
     memcpy(&file_len, &buf[0], 2);
@@ -370,7 +379,7 @@ void ser_put(int sd)
             //read first block
             nr = readn(sd, block, MAX_BLOCK_SIZE);
             //if failed to read set ackcode to '1'
-            if(nr < 0)
+            if (nr < 0)
             {
                 printf("failed to read file\n");
                 ackcode = PUT_FAIL;
@@ -411,24 +420,25 @@ void ser_put(int sd)
                     total += nw;
                 }
             }
+            printf("file is sent to client.\n");
         }
         else
         {
             ackcode = PUT_FAIL;
         }
         //write to client status of file transfer
-        memset(buf,0,MAX_BLOCK_SIZE);
+        memset(buf, 0, MAX_BLOCK_SIZE);
         opcode = PUT_2;
-        memcpy(&buf[0],&opcode,1);
+        memcpy(&buf[0], &opcode, 1);
         //write opcode to client
-        if(writen(sd,&buf[0],1) < 0)
+        if (writen(sd, &buf[0], 1) < 0)
         {
             printf("Unable to send opcode to client\n");
             return;
         }
-        memcpy(&buf[1],&ackcode,1);
+        memcpy(&buf[1], &ackcode, 1);
         //write ack code to client
-        if(writen(sd,&buf[1],1) < 0)
+        if (writen(sd, &buf[1], 1) < 0)
         {
             printf("Unable to send ackcode to client\n");
             return;
@@ -438,82 +448,120 @@ void ser_put(int sd)
         return;
     }
 }
-// void ser_put(int sd, char * buf)
-// {
-//     char opcode, ackcode;
-//     int file_len, fd, fsize, block_size, nr, nw;
-//     char buf1[MAX_BLOCK_SIZE];
-//     char filename[MAX_BLOCK_SIZE];
-//     bzero(buf1,MAX_BLOCK_SIZE);
-//     bzero(filename,MAX_BLOCK_SIZE);
-//     //read file name length
-//     readn(sd, &buf[1], MAX_BLOCK_SIZE);
-//     memcpy(&file_len,&buf[1],2);
-//     file_len = htons(file_len);
-//     //read file name
-//     readn(sd,&buf[3],MAX_BLOCK_SIZE);
-//     for(int i=0; i<file_len;i++)
-//     {
-//         filename[i] = buf[i+3];
-//     }
-//     filename[file_len] = '\0';
-//     /* check if the file already exists */
-//     if (access(buf, R_OK) == 0)
-//         ackcode = PUT_CLASH_ERROR;
-//     else
-//         ackcode = PUT_READY;
 
-//     buf1[0] = PUT_1;
-//     buf1[1] = ackcode;
-//     writen(sd,&buf1[0],1);
-//     writen(sd,&buf1[1],1);
+void ser_get(int sd)
+{
+    char opcode, ackcode;
+    int file_len, fsize, nr, nw, fd, total;
+    char filename[MAX_BLOCK_SIZE]; //buffer to store filename
+    char buf[MAX_BLOCK_SIZE];      //buffer to store client and server message
+    //read file name length and convert to host byte order
+    readn(sd, &buf[0], MAX_BLOCK_SIZE);
+    memcpy(&file_len, &buf[0], 2);
+    file_len = ntohs(file_len);
+    printf("file name length is: %d\n", file_len);
+    //read file name
+    readn(sd, &buf[2], MAX_BLOCK_SIZE);
+    memcpy(&filename, &buf[2], file_len);
+    //set last index of filename to be NULL
+    filename[file_len] = '\0';
+    printf("file name is: %s\n", filename);
+    FILE *file;                  //create file pointer
+    file = fopen(filename, "r"); //open client selected file
+    memset(buf, 0, MAX_BLOCK_SIZE);
+    //check if file exist on server
+    if (file != NULL)
+    {
+        buf[0] = GET_1;
+        buf[1] = GET_READY;
+        if (writen(sd, &buf[0], 1) < 0)
+        {
+            printf("Error: failed to send opcode to client\n");
+            return;
+        }
+        if (writen(sd, &buf[1], 1) < 0)
+        {
+            printf("Error: failed to send ackcode to client\n");
+            return;
+        }
+        printf("File exist on server.\n");
+        //get file size and send to client
+        struct stat fst;
+        //check if file stat is ok
+        if (stat(filename, &fst) == -1)
+        {
+            printf("failed to get file stat\n");
+            return;
+        }
+        //get file size and convert it to network btye order
+        memset(buf, 0, MAX_BLOCK_SIZE);
+        opcode = GET_2;
+        memcpy(&buf[0], &opcode, 1);
+        if (writen(sd, &buf[0], 1) < 0)
+        {
+            printf("failed to write opcode to server 2\n");
+        }
+        fsize = (int)fst.st_size;
+        int templen = htonl(fsize);
+        memcpy(&buf[1], &templen, 4);
+        if (writen(sd, &buf[1], 4) < 0)
+        {
+            printf("failed to write file size to server\n");
+            return;
+        }
+        //getting file descriptor
+        int fd = fileno(file);
+        //creating buffer for block of data
+        char block[MAX_BLOCK_SIZE];
+        memset(block, '\0', MAX_BLOCK_SIZE);
+        //set file pointer
+        lseek(fd, 0, SEEK_SET);
+        //read and write first block of data
+        nr = read(fd, block, MAX_BLOCK_SIZE);
+        nw = writen(sd, block, MAX_BLOCK_SIZE);
+        //total write data
+        total += nw;
+        //if current sent block of data is smaller than total file size
+        while (total < fsize)
+        {
+            //reset block buffer
+            memset(block, '\0', MAX_BLOCK_SIZE);
+            //set file seek pointer to previous end
+            lseek(fd, total, SEEK_SET);
 
-//     if(ackcode == PUT_READY)
-//     {
-//         memset(buf1,'\0',MAX_BLOCK_SIZE);
-//         //read opcode from client
-//         readn(sd,buf1,MAX_BLOCK_SIZE);
-//         //read length of file
-//         readn(sd,&buf[1],MAX_BLOCK_SIZE);
-//         memcpy(&fsize,&buf[1],4);
-//         fsize = ntohl(fsize);
-
-//         //create file
-//         if((fd = open(filename, O_WRONLY | O_CREAT, 0666)) != -1)
-//         {
-//             memset(buf1,'\0',MAX_BLOCK_SIZE);
-//             lseek(fd, 0, SEEK_SET);
-//             //first block of data
-//             nr = readn(sd, buf1, MAX_BLOCK_SIZE);
-//             //if file size is smaller than max block size
-//             if(fsize < MAX_BLOCK_SIZE)
-//             {
-//                 nw = write(fd, buf1, fsize);
-//             }
-//             else
-//             {
-//                 nw = write(fd, buf1, MAX_BLOCK_SIZE);
-//                 block_size += nw;
-
-//                 while(block_size < fsize)
-//                 {
-//                     memset(buf1,'\0',MAX_BLOCK_SIZE);
-//                     lseek(fd,block_size,SEEK_SET);
-
-//                     nr = readn(sd,buf1,MAX_BLOCK_SIZE);
-
-//                     if((fsize - block_size) < MAX_BLOCK_SIZE)
-//                     {
-//                         nw = write(fd, buf1, (fsize - block_size));
-//                     }
-//                     else
-//                     {
-//                         nw = write(fd, buf1, MAX_BLOCK_SIZE);
-//                     }
-//                     block_size += nw;
-//                 }
-//             }
-//         }
-//     }
-//     close(fd);
-// }
+            //read next block of data
+            //if file size - current total size is larger than max block
+            if ((fsize - total) > MAX_BLOCK_SIZE)
+            {
+                //read next block of data to max block size
+                nr = read(fd, block, MAX_BLOCK_SIZE);
+            }
+            else
+            {
+                //read next block of data to leftover size
+                nr = read(fd, block, (fsize - total));
+            }
+            //read block data to server
+            writen(sd, block, MAX_BLOCK_SIZE);
+            //add write count to total size
+            total += nr;
+        }
+    }
+    else
+    {
+        buf[0] = GET_1;
+        buf[1] = GET_NOT_FOUND;
+        if (writen(sd, &buf[0], 1) < 0)
+        {
+            printf("Error: failed to send opcode to client\n");
+            return;
+        }
+        if (writen(sd, &buf[1], 1) < 0)
+        {
+            printf("Error: failed to send ackcode to client\n");
+            return;
+        }
+        printf("File does not exist on server.\n");
+        return;
+    }
+}
