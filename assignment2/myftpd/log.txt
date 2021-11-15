@@ -1,0 +1,13 @@
+6861 Nov 15 12:58 : [pwd] pwd command received.
+6861 Nov 15 12:58 : [pwd] pwd function executed.
+6861 Nov 15 12:58 : [pwd] pwd function ended.
+6861 Nov 15 12:58 : [dir] dir command received.
+6861 Nov 15 12:58 : [dir] function successfully executed.
+6861 Nov 15 12:58 : [get] get command received.
+6861 Nov 15 12:58 : [get] file name length received.
+6861 Nov 15 12:58 : [get] file name received.
+6861 Nov 15 12:58 : [get] File exist on server.
+6861 Nov 15 12:58 : [get]File is sent to client.
+6861 Nov 15 12:58 : [put] file name length received.
+6861 Nov 15 12:58 : [put] file name received.
+6861 Nov 15 12:58 : [put] put clash error.

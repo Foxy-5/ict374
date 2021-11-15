@@ -16,6 +16,7 @@
  */
 #include <unistd.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <stdlib.h> /* strlen(), strcmp() etc */
 #include <stdio.h>  /* printf()  */
 #include <string.h> /* strlen(), strcmp() etc */
@@ -51,6 +52,8 @@ void ser_dir(int);
 void ser_put(int);
 //server get function handler
 void ser_get(int);
+//function to log interaction with client
+void log_file(char *);
 
 int main(int argc, char *argv[])
 {
@@ -228,6 +231,8 @@ void ser_pwd(int sd)
     nr = strlen(serverpath);
     len = htons(nr);
 
+    log_file("[pwd] pwd command received.");
+
     if (len > 0)
     {
         status = PWD_READY;
@@ -237,13 +242,16 @@ void ser_pwd(int sd)
         nw = writen(sd, &status, 1);
         nw = writen(sd, &buf[2], 4);
         nw = writen(sd, serverpath, nr);
+        log_file("[pwd] pwd function executed.");
     }
     else
     {
         status = PWD_ERROR;
         nw = writen(sd, &status, 1);
+        log_file("[pwd] pwd function error.");
         return;
     }
+    log_file("[pwd] pwd function ended.");
 }
 
 void ser_dir(int sd)
@@ -259,9 +267,11 @@ void ser_dir(int sd)
     char files[MAX_NUM_TOKENS];
     char tmp[MAX_NUM_TOKENS];
 
+    log_file("[dir] dir command received.");
+    
     if ((dp = opendir(".")) == NULL)
     {
-        printf("\tFailed to open directory\n");
+        log_file("Failed to open directory.");
         status = DIR_ERROR;
         nw = writen(sd, &status, 1);
         return;
@@ -287,7 +297,7 @@ void ser_dir(int sd)
         filecount++;
         if (filecount > MAX_NUM_TOKENS)
         {
-            printf("\tToo many files to be displayed!\n");
+            log_file("Too many files to be displayed!");
             break;
         }
     }
@@ -305,6 +315,7 @@ void ser_dir(int sd)
     nw = writen(sd, &status, 1);
     nw = writen(sd, &buf[2], 4);
     nw = writen(sd, files, nr);
+    log_file("[dir] function successfully executed.");
     return;
 }
 
@@ -319,21 +330,25 @@ void ser_put(int sd)
     readn(sd, &buf[0], MAX_BLOCK_SIZE);
     memcpy(&file_len, &buf[0], 2);
     file_len = ntohs(file_len);
-    printf("file name length is: %d\n", file_len);
+    //printf("file name length is: %d\n", file_len);
+    log_file("[put] file name length received.");
     //read file name
     readn(sd, &buf[2], MAX_BLOCK_SIZE);
     memcpy(&filename, &buf[2], file_len);
     //set last index of filename to be NULL
     filename[file_len] = '\0';
-    printf("file name is: %s\n", filename);
+    //printf("file name is: %s\n", filename);
+    log_file("[put] file name received.");
     //check if file exist on server
     if (access(filename, R_OK) == 0)
     {
         ackcode = PUT_CLASH_ERROR;
+        log_file("[put] put clash error.");
     }
     else
     {
         ackcode = PUT_READY;
+        log_file("[put] put ready.");
     }
     //write opcode and ack code to client
     memset(buf, 0, MAX_BLOCK_SIZE);
@@ -349,22 +364,24 @@ void ser_put(int sd)
         //check if can read opcode from client
         if (readn(sd, &buf[0], MAX_BLOCK_SIZE) < 0)
         {
-            printf("failed to read opcode 2 from client\n");
+            log_file("[put] failed to read opcode 2 from client");
             return;
         }
         memcpy(&opcode, &buf[0], 1);
-        printf("opcode is %c\n", opcode);
+        //printf("opcode is %c\n", opcode);
+        log_file("[put] opcode 2 received.");
         //read file size
         //check if can read file size from client
         if (readn(sd, &buf[1], MAX_BLOCK_SIZE) < 0)
         {
-            printf("failed to read file size from client\n");
+            log_file("[put] failed to read file size from client");
             return;
         }
         memcpy(&fsize, &buf[1], 4);
         //convert file size to host byte order
         fsize = ntohl(fsize);
-        printf("file size is %d\n", fsize);
+        //printf("file size is %d\n", fsize);
+        log_file("[put] file size received.");
         //create file
         if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) != -1)
         {
@@ -381,7 +398,7 @@ void ser_put(int sd)
             //if failed to read set ackcode to '1'
             if (nr < 0)
             {
-                printf("failed to read file\n");
+                log_file("[put] failed to read file.");
                 ackcode = PUT_FAIL;
             }
             //if total file size is smaller than max block size
@@ -420,11 +437,12 @@ void ser_put(int sd)
                     total += nw;
                 }
             }
-            printf("file is sent to client.\n");
+            log_file("[put] file received from client.");
         }
         else
         {
             ackcode = PUT_FAIL;
+            log_file("[put] put failed.");
         }
         //write to client status of file transfer
         memset(buf, 0, MAX_BLOCK_SIZE);
@@ -433,24 +451,25 @@ void ser_put(int sd)
         //write opcode to client
         if (writen(sd, &buf[0], 1) < 0)
         {
-            printf("Unable to send opcode to client\n");
+            log_file("[put] Unable to send opcode to client.");
             return;
         }
         memcpy(&buf[1], &ackcode, 1);
         //write ack code to client
         if (writen(sd, &buf[1], 1) < 0)
         {
-            printf("Unable to send ackcode to client\n");
+            log_file("[put] Unable to send ackcode to client.");
             return;
         }
         close(fd);
-        printf("file recieved\n");
+        log_file("[put] put command finished.");
         return;
     }
 }
 
 void ser_get(int sd)
 {
+    log_file("[get] get command received.");
     char opcode, ackcode;
     int file_len, fsize, nr, nw, fd, total;
     char filename[MAX_BLOCK_SIZE]; //buffer to store filename
@@ -459,13 +478,15 @@ void ser_get(int sd)
     readn(sd, &buf[0], MAX_BLOCK_SIZE);
     memcpy(&file_len, &buf[0], 2);
     file_len = ntohs(file_len);
-    printf("file name length is: %d\n", file_len);
+    //printf("file name length is: %d\n", file_len);
+    log_file("[get] file name length received.");
     //read file name
     readn(sd, &buf[2], MAX_BLOCK_SIZE);
     memcpy(&filename, &buf[2], file_len);
     //set last index of filename to be NULL
     filename[file_len] = '\0';
-    printf("file name is: %s\n", filename);
+    //printf("file name is: %s\n", filename);
+    log_file("[get] file name received.");
     FILE *file;                  //create file pointer
     file = fopen(filename, "r"); //open client selected file
     memset(buf, 0, MAX_BLOCK_SIZE);
@@ -476,21 +497,21 @@ void ser_get(int sd)
         buf[1] = GET_READY;
         if (writen(sd, &buf[0], 1) < 0)
         {
-            printf("Error: failed to send opcode to client\n");
+            log_file("[get] Error: failed to send opcode to client.");
             return;
         }
         if (writen(sd, &buf[1], 1) < 0)
         {
-            printf("Error: failed to send ackcode to client\n");
+            log_file("[get] Error: failed to send ackcode to client.");
             return;
         }
-        printf("File exist on server.\n");
+        log_file("[get] File exist on server.");
         //get file size and send to client
         struct stat fst;
         //check if file stat is ok
         if (stat(filename, &fst) == -1)
         {
-            printf("failed to get file stat\n");
+            log_file("[get] failed to get file stat.");
             return;
         }
         //get file size and convert it to network btye order
@@ -499,14 +520,14 @@ void ser_get(int sd)
         memcpy(&buf[0], &opcode, 1);
         if (writen(sd, &buf[0], 1) < 0)
         {
-            printf("failed to write opcode to server 2\n");
+            log_file("[get] failed to write opcode to client 2.");
         }
         fsize = (int)fst.st_size;
         int templen = htonl(fsize);
         memcpy(&buf[1], &templen, 4);
         if (writen(sd, &buf[1], 4) < 0)
         {
-            printf("failed to write file size to server\n");
+            log_file("[get] failed to write file size to client.");
             return;
         }
         //getting file descriptor
@@ -546,6 +567,7 @@ void ser_get(int sd)
             //add write count to total size
             total += nr;
         }
+        log_file("[get] File is sent to client.");
     }
     else
     {
@@ -553,15 +575,36 @@ void ser_get(int sd)
         buf[1] = GET_NOT_FOUND;
         if (writen(sd, &buf[0], 1) < 0)
         {
-            printf("Error: failed to send opcode to client\n");
+            log_file("[get] Error: failed to send opcode to client.");
             return;
         }
         if (writen(sd, &buf[1], 1) < 0)
         {
-            printf("Error: failed to send ackcode to client\n");
+            log_file("[get] Error: failed to send ackcode to client.");
             return;
         }
-        printf("File does not exist on server.\n");
+        log_file("[get] File does not exist on server.");
         return;
     }
+}
+
+void log_file(char *message)
+{
+    FILE *file;
+    pid_t pid = getpid();
+    char timearr[100];
+    time_t raw_time;
+    struct tm *time_info;
+
+    time(&raw_time);
+    time_info = localtime(&raw_time);
+    strftime(timearr,sizeof(timearr),"%b %d %H:%M",time_info);
+    file = fopen("log.txt", "a");
+    if (file == NULL)
+    {
+        perror("Server: log file.\n");
+    }
+    fprintf(file,"%d %s : ", pid, timearr);
+    fprintf(file, "%s\n",message);
+    fclose(file);
 }
