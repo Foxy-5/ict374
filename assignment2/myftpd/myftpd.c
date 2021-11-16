@@ -207,11 +207,11 @@ void serve_a_client(int sd)
         {
             ser_dir(sd);
         }
-        else if (buf[0] == PUT_1)
+        else if (buf[0] == PUT_CODE1)
         {
             ser_put(sd);
         }
-        else if (buf[0] == GET_1)
+        else if (buf[0] == GET_CODE1)
         {
             ser_get(sd);
         }
@@ -352,7 +352,7 @@ void ser_put(int sd)
     }
     //write opcode and ack code to client
     memset(buf, 0, MAX_BLOCK_SIZE);
-    buf[0] = PUT_1;
+    buf[0] = PUT_CODE1;
     buf[1] = ackcode;
     writen(sd, &buf[0], 1);
     writen(sd, &buf[1], 1);
@@ -446,7 +446,7 @@ void ser_put(int sd)
         }
         //write to client status of file transfer
         memset(buf, 0, MAX_BLOCK_SIZE);
-        opcode = PUT_2;
+        opcode = PUT_CODE2;
         memcpy(&buf[0], &opcode, 1);
         //write opcode to client
         if (writen(sd, &buf[0], 1) < 0)
@@ -493,7 +493,7 @@ void ser_get(int sd)
     //check if file exist on server
     if (file != NULL)
     {
-        buf[0] = GET_1;
+        buf[0] = GET_CODE1;
         buf[1] = GET_READY;
         if (writen(sd, &buf[0], 1) < 0)
         {
@@ -516,7 +516,7 @@ void ser_get(int sd)
         }
         //get file size and convert it to network btye order
         memset(buf, 0, MAX_BLOCK_SIZE);
-        opcode = GET_2;
+        opcode = GET_CODE2;
         memcpy(&buf[0], &opcode, 1);
         if (writen(sd, &buf[0], 1) < 0)
         {
@@ -571,7 +571,7 @@ void ser_get(int sd)
     }
     else
     {
-        buf[0] = GET_1;
+        buf[0] = GET_CODE1;
         buf[1] = GET_NOT_FOUND;
         if (writen(sd, &buf[0], 1) < 0)
         {

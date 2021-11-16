@@ -317,7 +317,7 @@ void cli_get(int sd, char *filename)
 
     char file_name[MAX_BLOCK_SIZE]; //use for storing filename
     strcpy(file_name, filename);    //string copy filename
-    buf[0] = GET_1;
+    buf[0] = GET_CODE1;
     if (writen(sd, &buf[0], 1) < 0)
     {
         printf("\tFailed to write op code to server.\n");
@@ -359,7 +359,7 @@ void cli_get(int sd, char *filename)
     }
     memcpy(&ackcode, &buf[1], 1);
     printf("\tAckcode from server is: %c\n", ackcode);
-    if (opcode == GET_1)
+    if (opcode == GET_CODE1)
     {
         if (ackcode == GET_READY)
         {
@@ -371,7 +371,7 @@ void cli_get(int sd, char *filename)
                 return;
             }
             memcpy(&opcode, &buf[0], 1);
-            if (opcode == GET_2)
+            if (opcode == GET_CODE2)
             {
                 //check if can read file size from client
                 if (readn(sd, &buf[1], MAX_BLOCK_SIZE) < 0)
@@ -472,7 +472,7 @@ void cli_put(int sd, char *filename)
     if (file != NULL)
     {
         //write opcode to server
-        buf[0] = PUT_1;
+        buf[0] = PUT_CODE1;
         writen(sd, &buf[0], 1);
         memset(buf, 0, MAX_BLOCK_SIZE); //set buffer to 0
         //get file name length
@@ -516,7 +516,7 @@ void cli_put(int sd, char *filename)
         {
             //write opcode 2 to server
             memset(buf, 0, MAX_BLOCK_SIZE);
-            opcode = PUT_2;
+            opcode = PUT_CODE2;
             memcpy(&buf[0], &opcode, 1);
             if (writen(sd, &buf[0], 1) < 0)
             {
@@ -595,7 +595,7 @@ void cli_put(int sd, char *filename)
             }
             memcpy(&ackcode, &buf[1], 1);
             //check if opcode is correct
-            if (opcode == PUT_2)
+            if (opcode == PUT_CODE2)
             {
                 printf("\tServer opcode recieved.\n");
                 printf("\topcode is: %c\n", opcode);
