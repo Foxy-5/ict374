@@ -58,3 +58,20 @@
 4063 Nov 17 14:15 : [put] file name length received.
 4063 Nov 17 14:15 : [put] file name received.
 4063 Nov 17 14:15 : [put] put clash error.
+2938 Nov 17 19:12 : [get] get command received.
+2938 Nov 17 19:12 : [get] file name length received.
+2938 Nov 17 19:12 : [get] file name received.
+2938 Nov 17 19:12 : [get] File exist on server.
+2938 Nov 17 19:12 : [get] File is sent to client.
+2938 Nov 17 19:13 : [get] get command received.
+2938 Nov 17 19:13 : [get] file name length received.
+2938 Nov 17 19:13 : [get] file name received.
+2938 Nov 17 19:13 : [get] File exist on server.
+2938 Nov 17 19:13 : [get] File is sent to client.
+3183 Nov 17 19:19 : [put] file name length received.
+3183 Nov 17 19:19 : [put] file name received.
+3183 Nov 17 19:19 : [put] put ready.
+3183 Nov 17 19:19 : [put] opcode 2 received.
+3183 Nov 17 19:19 : [put] file size received.
+3183 Nov 17 19:19 : [put] file received from client.
+3183 Nov 17 19:19 : [put] put command finished.

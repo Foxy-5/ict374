@@ -311,7 +311,7 @@ void cli_dir(int sd)
 void cli_get(int sd, char *filename)
 {
     char opcode, ackcode;
-    int fsize, nr, nw, file_len, total, fd;
+    int fsize, nr, nw, file_len, total = 0, fd;
     char buf[MAX_BLOCK_SIZE];
     memset(buf, 0, MAX_BLOCK_SIZE);
 
@@ -394,26 +394,27 @@ void cli_get(int sd, char *filename)
                     memset(block, '\0', MAX_BLOCK_SIZE);
                     //set file seek pointer to start of file
                     lseek(fd, 0, SEEK_SET);
-                    //read first block
-                    nr = readn(sd, block, MAX_BLOCK_SIZE);
-                    //if failed to read set ackcode to '1'
-                    if (nr < 0)
-                    {
-                        printf("failed to read file\n");
-                        ackcode = PUT_FAIL;
-                    }
                     //if total file size is smaller than max block size
                     if (fsize < MAX_BLOCK_SIZE)
                     {
+                        //read from socket stream to data block
+                        nr = readn(sd, block, MAX_BLOCK_SIZE);
+                        //if failed to read set ackcode to '1'
+                        if (nr < 0)
+                        {
+                            printf("failed to read file\n");
+                            ackcode = PUT_FAIL;
+                        }
                         //write block of data to file using leftover file size
                         nw = write(fd, block, fsize);
+                        if (nw < 0)
+                        {
+                            printf("failed to write file\n");
+                            ackcode = PUT_FAIL;
+                        }
                     }
                     else
                     {
-                        //write block of data to file using max block size
-                        nw = write(fd, block, MAX_BLOCK_SIZE);
-                        //add write count to total count
-                        total += nw;
                         //if total transfer is less than file size
                         while (total < fsize)
                         {
@@ -423,16 +424,32 @@ void cli_get(int sd, char *filename)
                             lseek(fd, total, SEEK_SET);
                             //read next block of data
                             nr = readn(sd, block, MAX_BLOCK_SIZE);
+                            if (nr < 0)
+                            {
+                                printf("failed to read file\n");
+                                ackcode = PUT_FAIL;
+                            }
+                            int leftover = fsize - total;
                             //if leftover data is less than max block size
-                            if ((fsize - total) < MAX_BLOCK_SIZE)
+                            if (leftover < MAX_BLOCK_SIZE)
                             {
                                 //write to fd using the leftover file size
-                                nw = write(fd, block, (fsize - total));
+                                nw = write(fd, block, leftover);
+                                if (nw < 0)
+                                {
+                                    printf("failed to write file\n");
+                                    ackcode = PUT_FAIL;
+                                }
                             }
                             else
                             {
                                 //write to fd using the max block size
                                 nw = write(fd, block, MAX_BLOCK_SIZE);
+                                if (nw < 0)
+                                {
+                                    printf("failed to write file\n");
+                                    ackcode = PUT_FAIL;
+                                }
                             }
                             //add to total file count
                             total += nw;

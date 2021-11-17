@@ -215,6 +215,8 @@ void serve_a_client(int sd)
         {
             ser_get(sd);
         }
+        //send back to client
+        // nw = writen(sd, buf, nr);
     }
 }
 
@@ -321,7 +323,7 @@ void ser_put(int sd)
 {
     //variables used
     char opcode, ackcode;
-    int file_len, fsize, nr, nw, fd, total;
+    int file_len, fsize, nr, nw, fd, total = 0;
     char filename[MAX_BLOCK_SIZE]; //buffer to store filename
     char buf[MAX_BLOCK_SIZE];      //buffer to store client and server message
     //read file name length and convert to host byte order
@@ -391,26 +393,27 @@ void ser_put(int sd)
             memset(block, '\0', MAX_BLOCK_SIZE);
             //set file seek pointer to start of file
             lseek(fd, 0, SEEK_SET);
-            //read first block
-            nr = readn(sd, block, MAX_BLOCK_SIZE);
-            //if failed to read set ackcode to '1'
-            if (nr < 0)
-            {
-                log_file("[put] failed to read file.");
-                ackcode = PUT_FAIL;
-            }
             //if total file size is smaller than max block size
             if (fsize < MAX_BLOCK_SIZE)
             {
+                //read first block
+                nr = readn(sd, block, MAX_BLOCK_SIZE);
+                //if failed to read set ackcode to '1'
+                if (nr < 0)
+                {
+                    log_file("[put] failed to read file.");
+                    ackcode = PUT_FAIL;
+                }
                 //write block of data to file using leftover file size
                 nw = write(fd, block, fsize);
+                if (nw < 0)
+                {
+                    log_file("[put] failed to write file.");
+                    ackcode = PUT_FAIL;
+                }
             }
             else
             {
-                //write block of data to file using max block size
-                nw = write(fd, block, MAX_BLOCK_SIZE);
-                //add write count to total count
-                total += nw;
                 //if total transfer is less than file size
                 while (total < fsize)
                 {
@@ -420,17 +423,32 @@ void ser_put(int sd)
                     lseek(fd, total, SEEK_SET);
                     //read next block of data
                     nr = readn(sd, block, MAX_BLOCK_SIZE);
+                    if (nr < 0)
+                    {
+                        log_file("[put] failed to read file.");
+                        ackcode = PUT_FAIL;
+                    }
                     //if leftover data is less than max block size
                     int leftover = fsize - total;
                     if (leftover < MAX_BLOCK_SIZE)
                     {
                         //write to fd using the leftover file size
                         nw = write(fd, block, leftover);
+                        if (nw < 0)
+                        {
+                            log_file("[put] failed to write file.");
+                            ackcode = PUT_FAIL;
+                        }
                     }
                     else
                     {
                         //write to fd using the max block size
                         nw = write(fd, block, MAX_BLOCK_SIZE);
+                        if (nw < 0)
+                        {
+                            log_file("[put] failed to write file.");
+                            ackcode = PUT_FAIL;
+                        }
                     }
                     //add to total file count
                     total += nw;
