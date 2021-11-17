@@ -268,7 +268,7 @@ void ser_dir(int sd)
     char tmp[MAX_NUM_TOKENS];
 
     log_file("[dir] dir command received.");
-    
+
     if ((dp = opendir(".")) == NULL)
     {
         log_file("Failed to open directory.");
@@ -423,10 +423,11 @@ void ser_put(int sd)
                     //read next block of data
                     nr = readn(sd, block, MAX_BLOCK_SIZE);
                     //if leftover data is less than max block size
-                    if ((fsize - total) < MAX_BLOCK_SIZE)
+                    int leftover = fsize - total;
+                    if (leftover < MAX_BLOCK_SIZE)
                     {
                         //write to fd using the leftover file size
-                        nw = write(fd, block, (fsize - total));
+                        nw = write(fd, block, leftover);
                     }
                     else
                     {
@@ -471,7 +472,7 @@ void ser_get(int sd)
 {
     log_file("[get] get command received.");
     char opcode, ackcode;
-    int file_len, fsize, nr, nw, fd, total;
+    int file_len, fsize, nr, nw, fd, total = 0;
     char filename[MAX_BLOCK_SIZE]; //buffer to store filename
     char buf[MAX_BLOCK_SIZE];      //buffer to store client and server message
     //read file name length and convert to host byte order
@@ -538,34 +539,40 @@ void ser_get(int sd)
         //set file pointer
         lseek(fd, 0, SEEK_SET);
         //read and write first block of data
-        nr = read(fd, block, MAX_BLOCK_SIZE);
-        nw = writen(sd, block, MAX_BLOCK_SIZE);
-        //total write data
-        total += nw;
-        //if current sent block of data is smaller than total file size
-        while (total < fsize)
+        if (fsize < MAX_BLOCK_SIZE)
         {
-            //reset block buffer
-            memset(block, '\0', MAX_BLOCK_SIZE);
-            //set file seek pointer to previous end
-            lseek(fd, total, SEEK_SET);
+            //read and write first block of data
+            nr = read(fd, block, fsize);
+            nw = writen(sd, block, MAX_BLOCK_SIZE);
+        }
+        else
+        {
+            //if current sent block of data is smaller than total file size
+            while (total < fsize)
+            {
+                //reset block buffer
+                memset(block, '\0', MAX_BLOCK_SIZE);
+                //set file seek pointer to previous end
+                lseek(fd, total, SEEK_SET);
 
-            //read next block of data
-            //if file size - current total size is larger than max block
-            if ((fsize - total) > MAX_BLOCK_SIZE)
-            {
-                //read next block of data to max block size
-                nr = read(fd, block, MAX_BLOCK_SIZE);
+                //read next block of data
+                int leftover = fsize - total;
+                //if file size - current total size is larger than max block
+                if (leftover > MAX_BLOCK_SIZE)
+                {
+                    //read next block of data to max block size
+                    nr = read(fd, block, MAX_BLOCK_SIZE);
+                }
+                else
+                {
+                    //read next block of data to leftover size
+                    nr = read(fd, block, leftover);
+                }
+                //read block data to server
+                writen(sd, block, MAX_BLOCK_SIZE);
+                //add write count to total size
+                total += nr;
             }
-            else
-            {
-                //read next block of data to leftover size
-                nr = read(fd, block, (fsize - total));
-            }
-            //read block data to server
-            writen(sd, block, MAX_BLOCK_SIZE);
-            //add write count to total size
-            total += nr;
         }
         log_file("[get] File is sent to client.");
     }
@@ -598,13 +605,13 @@ void log_file(char *message)
 
     time(&raw_time);
     time_info = localtime(&raw_time);
-    strftime(timearr,sizeof(timearr),"%b %d %H:%M",time_info);
+    strftime(timearr, sizeof(timearr), "%b %d %H:%M", time_info);
     file = fopen("log.txt", "a");
     if (file == NULL)
     {
         perror("Server: log file.\n");
     }
-    fprintf(file,"%d %s : ", pid, timearr);
-    fprintf(file, "%s\n",message);
+    fprintf(file, "%d %s : ", pid, timearr);
+    fprintf(file, "%s\n", message);
     fclose(file);
 }

@@ -459,7 +459,7 @@ void cli_put(int sd, char *filename)
 
     //variable used
     char opcode, ackcode; //storing opcode and ackcode
-    int fsize, nr, nw, file_len, total;
+    int fsize, nr, nw, file_len, total = 0;
     char buf[MAX_BLOCK_SIZE]; //to store message from client or server
 
     memset(buf, 0, MAX_BLOCK_SIZE); //set buffer to zero
@@ -548,35 +548,40 @@ void cli_put(int sd, char *filename)
             memset(block, '\0', MAX_BLOCK_SIZE);
             //set file pointer
             lseek(fd, 0, SEEK_SET);
-            //read and write first block of data
-            nr = read(fd, block, MAX_BLOCK_SIZE);
-            nw = writen(sd, block, MAX_BLOCK_SIZE);
-            //total write data
-            total += nw;
-            //if current sent block of data is smaller than total file size
-            while (total < fsize)
+            //check if file size is smaller than data buffer
+            if (fsize < MAX_BLOCK_SIZE)
             {
-                //reset block buffer
-                memset(block, '\0', MAX_BLOCK_SIZE);
-                //set file seek pointer to previous end
-                lseek(fd, total, SEEK_SET);
+                //read and write first block of data
+                nr = read(fd, block, fsize);
+                nw = writen(sd, block, MAX_BLOCK_SIZE);
+            }
+            else
+            {
+                //if current sent block of data is smaller than total file size
+                while (total < fsize)
+                {
+                    //reset block buffer
+                    memset(block, '\0', MAX_BLOCK_SIZE);
+                    //set file seek pointer to previous end
+                    lseek(fd, total, SEEK_SET);
 
-                //read next block of data
-                //if file size - current total size is larger than max block
-                if ((fsize - total) > MAX_BLOCK_SIZE)
-                {
-                    //read next block of data to max block size
-                    nr = read(fd, block, MAX_BLOCK_SIZE);
+                    //read next block of data
+                    //if file size - current total size is larger than max block
+                    if ((fsize - total) > MAX_BLOCK_SIZE)
+                    {
+                        //read next block of data to max block size
+                        nr = read(fd, block, MAX_BLOCK_SIZE);
+                    }
+                    else
+                    {
+                        //read next block of data to leftover size
+                        nr = read(fd, block, (fsize - total));
+                    }
+                    //read block data to server
+                    writen(sd, block, MAX_BLOCK_SIZE);
+                    //add write count to total size
+                    total += nr;
                 }
-                else
-                {
-                    //read next block of data to leftover size
-                    nr = read(fd, block, (fsize - total));
-                }
-                //read block data to server
-                writen(sd, block, MAX_BLOCK_SIZE);
-                //add write count to total size
-                total += nr;
             }
 
             //read server response
@@ -589,7 +594,7 @@ void cli_put(int sd, char *filename)
             }
             memcpy(&opcode, &buf[0], 1);
             //check if can read ack code from server
-            if (readn(sd, &buf[1], MAX_BLOCK_SIZE))
+            if (readn(sd, &buf[1], MAX_BLOCK_SIZE) < 0)
             {
                 printf("\tError: Not able to read ack code from server 3.\n");
             }

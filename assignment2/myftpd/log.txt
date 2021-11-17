@@ -11,3 +11,50 @@
 6861 Nov 15 12:58 : [put] file name length received.
 6861 Nov 15 12:58 : [put] file name received.
 6861 Nov 15 12:58 : [put] put clash error.
+3642 Nov 17 14:02 : [put] file name length received.
+3642 Nov 17 14:02 : [put] file name received.
+3642 Nov 17 14:02 : [put] put ready.
+3642 Nov 17 14:02 : [put] opcode 2 received.
+3642 Nov 17 14:02 : [put] file size received.
+3642 Nov 17 14:02 : [put] file received from client.
+3736 Nov 17 14:05 : [put] file name length received.
+3736 Nov 17 14:05 : [put] file name received.
+3736 Nov 17 14:05 : [put] put ready.
+3736 Nov 17 14:05 : [put] opcode 2 received.
+3736 Nov 17 14:05 : [put] file size received.
+3736 Nov 17 14:05 : [put] file received from client.
+3736 Nov 17 14:05 : [put] put command finished.
+3736 Nov 17 14:05 : [put] file name length received.
+3736 Nov 17 14:05 : [put] file name received.
+3736 Nov 17 14:05 : [put] put ready.
+3736 Nov 17 14:05 : [put] opcode 2 received.
+3736 Nov 17 14:05 : [put] file size received.
+3736 Nov 17 14:05 : [put] file received from client.
+3736 Nov 17 14:05 : [put] put command finished.
+3933 Nov 17 14:11 : [put] file name length received.
+3933 Nov 17 14:11 : [put] file name received.
+3933 Nov 17 14:11 : [put] put ready.
+3933 Nov 17 14:11 : [put] opcode 2 received.
+3933 Nov 17 14:11 : [put] file size received.
+3933 Nov 17 14:11 : [put] file received from client.
+3933 Nov 17 14:11 : [put] put command finished.
+3933 Nov 17 14:11 : [get] get command received.
+3933 Nov 17 14:11 : [get] file name length received.
+3933 Nov 17 14:11 : [get] file name received.
+3933 Nov 17 14:11 : [get] File exist on server.
+3933 Nov 17 14:11 : [get] File is sent to client.
+3933 Nov 17 14:11 : [get] get command received.
+3933 Nov 17 14:11 : [get] file name length received.
+3933 Nov 17 14:11 : [get] file name received.
+3933 Nov 17 14:11 : [get] File exist on server.
+3933 Nov 17 14:11 : [get] File is sent to client.
+4063 Nov 17 14:14 : [put] file name length received.
+4063 Nov 17 14:14 : [put] file name received.
+4063 Nov 17 14:14 : [put] put ready.
+4063 Nov 17 14:14 : [put] opcode 2 received.
+4063 Nov 17 14:14 : [put] file size received.
+4063 Nov 17 14:14 : [put] file received from client.
+4063 Nov 17 14:14 : [put] put command finished.
+4063 Nov 17 14:15 : [put] file name length received.
+4063 Nov 17 14:15 : [put] file name received.
+4063 Nov 17 14:15 : [put] put clash error.
