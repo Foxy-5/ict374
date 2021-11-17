@@ -215,8 +215,6 @@ void serve_a_client(int sd)
         {
             ser_get(sd);
         }
-        //send back to client
-        // nw = writen(sd, buf, nr);
     }
 }
 
