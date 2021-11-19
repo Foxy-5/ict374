@@ -75,3 +75,5 @@
 3183 Nov 17 19:19 : [put] file size received.
 3183 Nov 17 19:19 : [put] file received from client.
 3183 Nov 17 19:19 : [put] put command finished.
+170 Nov 19 17:13 : [dir] dir command received.
+170 Nov 19 17:13 : [dir] function successfully executed.

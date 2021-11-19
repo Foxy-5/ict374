@@ -52,6 +52,8 @@ void ser_dir(int);
 void ser_put(int);
 //server get function handler
 void ser_get(int);
+//server cd function handler
+void ser_cd(int);
 //function to log interaction with client
 void log_file(char *);
 
@@ -609,6 +611,31 @@ void ser_get(int sd)
         log_file("[get] File does not exist on server.");
         return;
     }
+}
+
+void ser_cd(int sd)
+{
+    log_file("[CD] CD command received.");
+    char buf[MAX_BLOCK_SIZE];   //buffer to store client and server message
+    char status;    
+    int nw, changeDir=0;
+    buf[0] = CD_CODE;
+    //change the current working directory- command cd
+    changeDir = chdir(buf);
+    if(changeDir == 0)
+    {
+        //if CD is ready
+        status = CD_READY;
+        nw = writen(sd, &buf[0], 1);
+        nw = writen(sd, &status, 1);  
+        log_file("[CD] CD command executed"); 
+    }
+    else
+    {
+        status = CD_ERROR;
+        log_file("[CD] CD command error");
+    }
+
 }
 
 void log_file(char *message)

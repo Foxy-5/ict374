@@ -30,3 +30,7 @@
 #define DIR_CODE 'D'
 #define DIR_READY '0'
 #define DIR_ERROR '1'
+
+#define CD_CODE 'C'
+#define CD_READY '0'
+#define CD_ERROR '1'
