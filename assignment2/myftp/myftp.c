@@ -29,7 +29,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include "../stream.h" /* MAX_BLOCK_SIZE, readn(), writen() */
-#include "token.h"
+#include "../token.h"
 #include "../netprotocol.h"
 
 #define SERV_TCP_PORT 41314

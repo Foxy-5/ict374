@@ -32,7 +32,7 @@
 #include "../stream.h"
 #include "../netprotocol.h"
 #include <dirent.h>
-#include "../myftp/token.h"
+#include "../token.h"
 #define SERV_TCP_PORT 41314 //default port
 
 // Source: Chapter 8 Example 6 ser6.c
