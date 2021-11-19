@@ -46,7 +46,7 @@ void cli_put(int, char *);
 //download file from server to client
 void cli_get(int, char *);
 //change the current directoryof the server
-void cli_cd(int);
+void cli_cd(int, char *);
 int main(int argc, char *argv[])
 {
     int sd, n, nr, nw, tknum, i = 0;
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(tokens[0], "cd")==0)
             {
-                cli_cd;
+                cli_cd(sd,tokens[1]);
             }
             else
             {
@@ -236,50 +236,64 @@ void cli_ldir()
     return;
 }
 
-void cli_cd(int sd)
+void cli_cd(int sd, char * buf)
 {
-    //variables 
-    char buf[MAX_BLOCK_SIZE];
-    char *tokens[MAX_NUM_TOKENS];
-    int nw, nr, len;
-    char temp[MAX_BLOCK_SIZE];
-    char opcode;
-    memset(buf, 0, MAX_BLOCK_SIZE);
-
-    //set opcode
-    buf[0] = CD_CODE;
-    //wrtie op code to server
-    nw = writen(sd, buf, 1);
-    //calculate the length of the string
-    nw = strlen(tokens[1]);
-    //convert host byte order to network byte order
-    len = htons(nw);
-    bcopy(&len, &buf[1], 2);
-
-    //write op code
-    writen(sd, &buf[1], 2);
-    writen(sd, tokens[1], nw);
-    //read op code
-    nr = readn(sd, &buf[0], sizeof (buf));
-    //printf("\t%s\n", buf)
-    if(!buf[0] == CD_CODE)
+    char buf1[MAX_BLOCK_SIZE];
+    char opcode, status;
+    int len, convertedlen;
+    buf1[0] = CD_CODE;
+    //write opcode to server
+    if((writen(sd,&buf1[0],1)) < 0)
     {
-        printf("/tFailed to read CD op code\n");
+        printf("\tFailed to write opcode to server.\n");
         return;
     }
-    nr = readn(sd, &buf[1], sizeof(buf));
-    if(buf[1] == CD_READY)
+    len = strlen(buf);
+    convertedlen = htons(len);
+    memcpy(&buf1[1],&convertedlen,2);
+    //write file length to server
+    if((writen(sd,&buf1[1],2)) < 0)
     {
-        //read
-        nr = readn(sd, &buf[1], sizeof (buf));
-        printf("\tSuccessfully nagivated to the directory.\n");
+        printf("\tFailed to write file length to server.\n");
+        return;
     }
-    //CD_ERROR returned
-    else
+    //write file path to server
+    if((writen(sd,&buf[0],len)) < 0)
     {
-        printf("\t CD_Error returned. Path: %s\n", tokens[1]);
+        printf("\tFailed to write file path to server.\n");
+        return;
     }
-}
+    memset(buf1,0,MAX_BLOCK_SIZE);
+    //read opcode
+    if((readn(sd,&buf1[0],MAX_BLOCK_SIZE)) < 0)
+    {
+        printf("\tFailed to read opcode from server.\n");
+        return;
+    }
+    memcpy(&opcode,&buf1[0],1);
+    if(opcode != CD_CODE)
+    {
+        printf("\tInvalid op code from server.\n");
+        return;
+    }
+    if((readn(sd,&buf1[1],MAX_BLOCK_SIZE)) < 0)
+    {
+        printf("\tFailed to read status from server.\n");
+        return;
+    }
+    memcpy(&status,&buf1[1],1);
+    if(status == CD_READY)
+    {
+        printf("\tCD to new directory: %s.\n",buf);
+        return;
+    }
+    else if(status == CD_ERROR)
+    {
+        printf("\tFailed to CD to new directory.\n");
+        return;
+    }
+    return;
+}  
 
 void cli_pwd(int sd)
 {

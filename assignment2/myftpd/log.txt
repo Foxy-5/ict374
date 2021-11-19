@@ -1,79 +1,14 @@
-6861 Nov 15 12:58 : [pwd] pwd command received.
-6861 Nov 15 12:58 : [pwd] pwd function executed.
-6861 Nov 15 12:58 : [pwd] pwd function ended.
-6861 Nov 15 12:58 : [dir] dir command received.
-6861 Nov 15 12:58 : [dir] function successfully executed.
-6861 Nov 15 12:58 : [get] get command received.
-6861 Nov 15 12:58 : [get] file name length received.
-6861 Nov 15 12:58 : [get] file name received.
-6861 Nov 15 12:58 : [get] File exist on server.
-6861 Nov 15 12:58 : [get]File is sent to client.
-6861 Nov 15 12:58 : [put] file name length received.
-6861 Nov 15 12:58 : [put] file name received.
-6861 Nov 15 12:58 : [put] put clash error.
-3642 Nov 17 14:02 : [put] file name length received.
-3642 Nov 17 14:02 : [put] file name received.
-3642 Nov 17 14:02 : [put] put ready.
-3642 Nov 17 14:02 : [put] opcode 2 received.
-3642 Nov 17 14:02 : [put] file size received.
-3642 Nov 17 14:02 : [put] file received from client.
-3736 Nov 17 14:05 : [put] file name length received.
-3736 Nov 17 14:05 : [put] file name received.
-3736 Nov 17 14:05 : [put] put ready.
-3736 Nov 17 14:05 : [put] opcode 2 received.
-3736 Nov 17 14:05 : [put] file size received.
-3736 Nov 17 14:05 : [put] file received from client.
-3736 Nov 17 14:05 : [put] put command finished.
-3736 Nov 17 14:05 : [put] file name length received.
-3736 Nov 17 14:05 : [put] file name received.
-3736 Nov 17 14:05 : [put] put ready.
-3736 Nov 17 14:05 : [put] opcode 2 received.
-3736 Nov 17 14:05 : [put] file size received.
-3736 Nov 17 14:05 : [put] file received from client.
-3736 Nov 17 14:05 : [put] put command finished.
-3933 Nov 17 14:11 : [put] file name length received.
-3933 Nov 17 14:11 : [put] file name received.
-3933 Nov 17 14:11 : [put] put ready.
-3933 Nov 17 14:11 : [put] opcode 2 received.
-3933 Nov 17 14:11 : [put] file size received.
-3933 Nov 17 14:11 : [put] file received from client.
-3933 Nov 17 14:11 : [put] put command finished.
-3933 Nov 17 14:11 : [get] get command received.
-3933 Nov 17 14:11 : [get] file name length received.
-3933 Nov 17 14:11 : [get] file name received.
-3933 Nov 17 14:11 : [get] File exist on server.
-3933 Nov 17 14:11 : [get] File is sent to client.
-3933 Nov 17 14:11 : [get] get command received.
-3933 Nov 17 14:11 : [get] file name length received.
-3933 Nov 17 14:11 : [get] file name received.
-3933 Nov 17 14:11 : [get] File exist on server.
-3933 Nov 17 14:11 : [get] File is sent to client.
-4063 Nov 17 14:14 : [put] file name length received.
-4063 Nov 17 14:14 : [put] file name received.
-4063 Nov 17 14:14 : [put] put ready.
-4063 Nov 17 14:14 : [put] opcode 2 received.
-4063 Nov 17 14:14 : [put] file size received.
-4063 Nov 17 14:14 : [put] file received from client.
-4063 Nov 17 14:14 : [put] put command finished.
-4063 Nov 17 14:15 : [put] file name length received.
-4063 Nov 17 14:15 : [put] file name received.
-4063 Nov 17 14:15 : [put] put clash error.
-2938 Nov 17 19:12 : [get] get command received.
-2938 Nov 17 19:12 : [get] file name length received.
-2938 Nov 17 19:12 : [get] file name received.
-2938 Nov 17 19:12 : [get] File exist on server.
-2938 Nov 17 19:12 : [get] File is sent to client.
-2938 Nov 17 19:13 : [get] get command received.
-2938 Nov 17 19:13 : [get] file name length received.
-2938 Nov 17 19:13 : [get] file name received.
-2938 Nov 17 19:13 : [get] File exist on server.
-2938 Nov 17 19:13 : [get] File is sent to client.
-3183 Nov 17 19:19 : [put] file name length received.
-3183 Nov 17 19:19 : [put] file name received.
-3183 Nov 17 19:19 : [put] put ready.
-3183 Nov 17 19:19 : [put] opcode 2 received.
-3183 Nov 17 19:19 : [put] file size received.
-3183 Nov 17 19:19 : [put] file received from client.
-3183 Nov 17 19:19 : [put] put command finished.
-170 Nov 19 17:13 : [dir] dir command received.
-170 Nov 19 17:13 : [dir] function successfully executed.
+4954 Nov 19 20:16 : Client start session.
+4954 Nov 19 20:16 : [pwd] pwd command received.
+4954 Nov 19 20:16 : [pwd] pwd function executed.
+4954 Nov 19 20:16 : [pwd] pwd function ended.
+4954 Nov 19 20:16 : [CD] CD command received.
+4954 Nov 19 20:16 : [CD] read file length.
+4954 Nov 19 20:16 : [CD] read file path.
+4954 Nov 19 20:16 : [CD] status is ready.
+4954 Nov 19 20:16 : [CD] CD function ended.
+4954 Nov 19 20:16 : [pwd] pwd command received.
+4954 Nov 19 20:16 : [pwd] pwd function executed.
+4954 Nov 19 20:16 : [pwd] pwd function ended.
+4954 Nov 19 20:16 : Client terminated session.
+
