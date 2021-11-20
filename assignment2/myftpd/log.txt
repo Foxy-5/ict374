@@ -12,3 +12,59 @@
 4954 Nov 19 20:16 : [pwd] pwd function ended.
 4954 Nov 19 20:16 : Client terminated session.
 
+2472 Nov 19 20:53 : Client start session.
+2472 Nov 19 20:53 : [dir] dir command received.
+2472 Nov 19 20:53 : [dir] function successfully executed.
+2472 Nov 19 20:53 : Client terminated session.
+
+4171 Nov 20 12:41 : Client start session.
+4171 Nov 20 12:41 : [pwd] pwd command received.
+4171 Nov 20 12:41 : [pwd] pwd function executed.
+4171 Nov 20 12:41 : [pwd] pwd function ended.
+4171 Nov 20 12:41 : Client terminated session.
+
+4353 Nov 20 12:45 : Client start session.
+4353 Nov 20 12:45 : [pwd] pwd command received.
+4353 Nov 20 12:45 : [pwd] pwd function executed.
+4353 Nov 20 12:45 : [pwd] pwd function ended.
+4353 Nov 20 12:45 : [dir] dir command received.
+4353 Nov 20 12:45 : [dir] function successfully executed.
+4353 Nov 20 12:46 : [put] file name length received.
+4353 Nov 20 12:46 : [put] file name received.
+4353 Nov 20 12:46 : [put] put ready.
+4353 Nov 20 12:46 : [put] opcode 2 received.
+4353 Nov 20 12:46 : [put] file size received.
+4353 Nov 20 12:46 : [put] file received from client.
+4353 Nov 20 12:46 : [put] put command finished.
+4353 Nov 20 12:46 : [get] get command received.
+4353 Nov 20 12:46 : [get] file name length received.
+4353 Nov 20 12:46 : [get] file name received.
+4353 Nov 20 12:46 : [get] File exist on server.
+4353 Nov 20 12:46 : [get] File is sent to client.
+4353 Nov 20 12:47 : Client terminated session.
+
+4526 Nov 20 12:49 : Client start session.
+4526 Nov 20 12:49 : [pwd] pwd command received.
+4526 Nov 20 12:49 : [pwd] pwd function executed.
+4526 Nov 20 12:49 : [pwd] pwd function ended.
+4526 Nov 20 12:50 : Client terminated session.
+
+4632 Nov 20 12:51 : Client start session.
+4632 Nov 20 12:51 : [pwd] pwd command received.
+4632 Nov 20 12:51 : [pwd] pwd function executed.
+4632 Nov 20 12:51 : [pwd] pwd function ended.
+4632 Nov 20 12:51 : Client terminated session.
+
+4655 Nov 20 12:52 : Client start session.
+4655 Nov 20 12:52 : [pwd] pwd command received.
+4655 Nov 20 12:52 : [pwd] pwd function executed.
+4655 Nov 20 12:52 : [pwd] pwd function ended.
+4655 Nov 20 12:52 : [CD] CD command received.
+4655 Nov 20 12:52 : [CD] read file length.
+4655 Nov 20 12:52 : [CD] read file path.
+4655 Nov 20 12:52 : [CD] status is ready.
+4655 Nov 20 12:52 : [CD] CD function ended.
+4655 Nov 20 12:52 : [dir] dir command received.
+4655 Nov 20 12:52 : [dir] function successfully executed.
+4655 Nov 20 12:52 : Client terminated session.
+

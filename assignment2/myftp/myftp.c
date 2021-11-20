@@ -49,7 +49,7 @@ void cli_get(int, char *);
 void cli_cd(int, char *);
 int main(int argc, char *argv[])
 {
-    int sd, n, nr, nw, tknum, i = 0;
+    int sd, nr, tknum, i = 0;
     char buf[MAX_BLOCK_SIZE], buf2[MAX_BLOCK_SIZE], host[60];
     char *tokens[MAX_NUM_TOKENS];
     unsigned short port;
@@ -300,31 +300,38 @@ void cli_pwd(int sd)
     //create variable for use
     char buf[MAX_BLOCK_SIZE];
     char serverpath[MAX_BLOCK_SIZE];
-    int nw, nr, len;
-    char opcode;
+    int len;
     memset(buf, 0, MAX_BLOCK_SIZE);
     memset(serverpath, 0, MAX_BLOCK_SIZE);
     //set op code
     buf[0] = PWD_CODE;
     //write op code to server
-    nw = writen(sd, buf, 1);
+    if((writen(sd, buf, 1)) < 0)
+    {
+        printf("\tFailed to write opcode to server.\n");
+        return;
+    }
     //read the op code from the server
-    nr = readn(sd, &buf[0], sizeof(buf));
+    if((readn(sd, &buf[0], MAX_BLOCK_SIZE)) < 0)
+    {
+        printf("\tFailed to read op code\n");
+        return;
+    }
     //printf("\t%s\n",buf);
     if (!(buf[0] == PWD_CODE))
     {
-        printf("/tFailed to read PWD op code\n");
+        printf("\tInvalid PWD op code\n");
         return;
     }
-    nr = readn(sd, &buf[1], sizeof(buf));
+    readn(sd, &buf[1], sizeof(buf));
     if (buf[1] == PWD_READY)
     {
         // read the length of server file path
-        nr = readn(sd, &buf[2], sizeof(buf));
+        readn(sd, &buf[2], sizeof(buf));
         //copy 4 bytes of the length
         memcpy(&len, &buf[2], 4);
         len = (int)ntohl(len);
-        nr = readn(sd, serverpath, sizeof(buf));
+        readn(sd, serverpath, sizeof(buf));
         printf("\t%s\n", serverpath);
     }
     else
@@ -339,31 +346,47 @@ void cli_dir(int sd)
     //create variable for use
     char buf[MAX_BLOCK_SIZE];
     char ser_files[MAX_BLOCK_SIZE];
-    int nw, nr, len;
-    char opcode;
+    int len;
     memset(buf, 0, MAX_BLOCK_SIZE);
     memset(ser_files, 0, MAX_BLOCK_SIZE);
     //set op code
     buf[0] = DIR_CODE;
     //write op code to server
-    nw = writen(sd, buf, 1);
+    if((writen(sd, buf, 1)) < 0)
+    {
+        printf("\tFailed to write op code to server.\n");
+        return;
+    }
     //read the op code from the server
-    nr = readn(sd, &buf[0], sizeof(buf));
+    if((readn(sd, &buf[0], MAX_BLOCK_SIZE)) < 0)
+    {
+        printf("\tFailed to read op code from server.\n");
+        return;
+    }
     //printf("\t%s\n",buf);
     if (!(buf[0] == DIR_CODE))
     {
         printf("\tFailed to read DIR op code\n");
         return;
     }
-    nr = readn(sd, &buf[1], sizeof(buf));
+    if((readn(sd, &buf[1], MAX_BLOCK_SIZE)) < 0)
+    {
+        printf("\tFailed to read ack code\n");
+        return;
+    }
     if (buf[1] == DIR_READY)
     {
         // read the length of server file path
-        nr = readn(sd, &buf[2], sizeof(buf));
+        if((readn(sd, &buf[2], MAX_BLOCK_SIZE)) < 0)
+        {
+            printf("\tFailed to read length of server file path\n");
+            return;
+        }
         //copy 4 bytes of the length
-        memcpy(&len, &buf[2], 4);
-        len = (int)ntohl(len);
-        nr = readn(sd, ser_files, sizeof(buf));
+        memcpy(&len, &buf[2], 2);
+        len = (int)ntohs(len);
+        readn(sd, ser_files, sizeof(buf));
+        //ser_files[len] = '\0';
         printf("\t%s\n", ser_files);
     }
     else
@@ -541,7 +564,7 @@ void cli_put(int sd, char *filename)
 
     //variable used
     char opcode, ackcode; //storing opcode and ackcode
-    int fsize, nr, nw, file_len, total = 0;
+    int fsize, nr, file_len, total = 0;
     char buf[MAX_BLOCK_SIZE]; //to store message from client or server
 
     memset(buf, 0, MAX_BLOCK_SIZE); //set buffer to zero
@@ -635,7 +658,7 @@ void cli_put(int sd, char *filename)
             {
                 //read and write first block of data
                 nr = read(fd, block, fsize);
-                nw = writen(sd, block, MAX_BLOCK_SIZE);
+                writen(sd, block, MAX_BLOCK_SIZE);
             }
             else
             {
