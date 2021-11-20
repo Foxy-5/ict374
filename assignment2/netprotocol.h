@@ -1,6 +1,6 @@
 /**
  * file:        netprotocol.h
- * Author:      Seow Wei Cheng (33753618) and Jin Min Seok ()
+ * Author:      Seow Wei Cheng (33753618) and Jin Min Seok (33884206)
  * Date:        13/11/2021 (version 2)
  * Purpose:     This is the network protocol description file
  *              This file defines the op code that is to be used

@@ -1,3 +1,9 @@
+/*   file:		token.c for Week 7
+*    author:		HX
+*    date:		2006.09.14
+*    last modified:	2006.09.21
+*    note:		not thoroughlt tested, therefore it may contain errors
+*/
 #include <string.h>
 #include "token.h"
 
