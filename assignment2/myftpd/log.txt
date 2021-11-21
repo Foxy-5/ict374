@@ -68,3 +68,11 @@
 4655 Nov 20 12:52 : [dir] function successfully executed.
 4655 Nov 20 12:52 : Client terminated session.
 
+3446 Nov 21 18:52 : Client start session.
+3446 Nov 21 18:52 : [CD] CD command received.
+3446 Nov 21 18:52 : [CD] failed to read file length.
+3446 Nov 21 18:52 : Client terminated session.
+
+3642 Nov 21 18:53 : Client start session.
+3642 Nov 21 18:54 : Client terminated session.
+

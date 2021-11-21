@@ -182,7 +182,14 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(tokens[0], "cd")==0)
             {
-                cli_cd(sd,tokens[1]);
+                if(tknum != 2)
+                {
+                    printf("\tInvalid command usage, please use: cd [filepath]\n");
+                }
+                else
+                {
+                    cli_cd(sd,tokens[1]);
+                }
             }
             else
             {
