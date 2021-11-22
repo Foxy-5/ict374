@@ -76,3 +76,18 @@
 3642 Nov 21 18:53 : Client start session.
 3642 Nov 21 18:54 : Client terminated session.
 
+2629 Nov 21 22:19 : Client start session.
+2629 Nov 21 22:20 : [put] file name length received.
+2629 Nov 21 22:20 : [put] file name received.
+2629 Nov 21 22:20 : [put] put ready.
+2629 Nov 21 22:20 : [put] opcode 2 received.
+2629 Nov 21 22:20 : [put] file size received.
+2629 Nov 21 22:20 : [put] file received from client.
+2629 Nov 21 22:20 : [put] put command finished.
+2629 Nov 21 22:22 : [get] get command received.
+2629 Nov 21 22:22 : [get] file name length received.
+2629 Nov 21 22:22 : [get] file name received.
+2629 Nov 21 22:22 : [get] File exist on server.
+2629 Nov 21 22:22 : [get] File is sent to client.
+2629 Nov 21 22:23 : Client terminated session.
+
