@@ -1,6 +1,6 @@
 /**
  * file:        myftpd.c
- * Author:      Seow Wei Cheng (33753618) and Jin Min Seok ()
+ * Author:      Seow Wei Cheng (33753618) and Jin Min Seok (33884206)
  * Date:        13/11/2021 (version 2)
  * Purpose:     This is the main driver code for the ftp server
  *              usage: myftpd [initial_current_directory]
