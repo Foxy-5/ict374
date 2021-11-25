@@ -12,8 +12,6 @@
 #define PUT_CODE2 'R'
 #define PUT_READY '0'
 #define PUT_CLASH_ERROR '1'
-//#define PUT_CREATE_ERROR '2'
-//#define PUT_OTHER_ERROR '3'
 #define PUT_DONE '0'
 #define PUT_FAIL '1'
 
@@ -21,7 +19,6 @@
 #define GET_CODE2 'R'
 #define GET_READY '0'
 #define GET_NOT_FOUND '1'
-//#define GET_OTHER_ERROR '2'
 
 #define PWD_CODE 'W'
 #define PWD_READY '0'
